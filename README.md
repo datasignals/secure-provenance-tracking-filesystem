@@ -6,6 +6,8 @@ Overview
 
 The Secure Provenance Tracking Filesystem is a cutting-edge Network File System (NFS) developed in Rust. The filesystem incorporates advanced features to ensure security and provenance tracking. It employs innovative methods such as the Shamir Secret Sharing Algorithm, blockchain (Polkadot/Aleph Zero), Redis Cluster, and a Git interception feature to deliver a secure, reliable, and traceable file storage solution.
 
+Here's a high level overview: https://datasignals.github.io/secure-provenance-tracking-filesystem
+
 Features
 ========
 
