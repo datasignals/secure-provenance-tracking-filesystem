@@ -9,9 +9,65 @@
 <body>
     <div class="panel">
         <div class="slideshow-container">
-            <div class="slide">Scene 1</div>
-            <div class="slide">Scene 2</div>
-            <div class="slide">Scene 3</div>
+            <div class="slide">
+                <p class="slide-text">we start by creating a bespoke NFS in Rust<br>that adheres to the NFS interface spec</p>
+                <img src="img/nfs.jpg" alt="Scene 1">
+            </div>
+            <div class="slide">
+                    <p class="slide-text line-height-control">here's a simple view of the FS metadata and data we must trap and store<br>
+                        in order that we have all the data to make it appear as a filesystem</p>
+                    <img src="img/simpleFSview.png" alt="Scene 2">
+            </div>
+            <div class="slide">
+                <p class="slide-text">the NFS interface provides the hooks for us to grab the FS data and metadata
+                    <br>a secret sharing approach is a fundamental part of our protocol
+                    <br>additionally it provides a significant layer of data security & DDOS defence
+                </p>
+                <img src="img/shares.png" alt="Scene 3">
+            </div>
+            <div class="slide">
+                <p class="slide-text">the compute that underpines the algorithm runs off-chain presently
+                    <br> it feeds an OCW with audit points from inside the algorithm
+                </p>
+                <img src="img/alephzero.jpeg" alt="Scene 4">
+            </div>
+            <div class="slide">
+                <p class="slide-text">smart contracts are used by the NFS to authenticate and permission access to data
+                </p>
+                <img src="img/contract.png" alt="Scene 5">
+            </div>
+            <div class="slide">
+                <p class="slide-text"> the result is a lightweight data substrate for dApps and apps alike
+                    <br>one that provides intrinsic provenance tracking of file changes
+                </p>
+                <img src="img/substrate.jpeg" alt="Scene 6">
+            </div>
+            <div class="slide">
+                <p class="slide-text">in fact it's a pluggable blockchain native filesystem
+                    <br>plugs into laptops, phones, iot devices, kubernetes pods
+                    <br>plugs into dApps and apps
+                </p>
+                <img src="img/plug.png" alt="Scene 7">
+            </div>
+            <div class="slide">
+                <p class="slide-text">we are currently working on
+                    <br>ZNPs that attest to that the verified compiled instance of the algorithm used
+                    <br>making a web3 wallet the basis for authentication
+                    <br>launching a directly pluggable service from the web
+                </p>
+                <img src="img/roadmap.jpeg" alt="Scene 8">
+            </div>
+            <div class="slide">
+                <p class="slide-text">
+                    benefits include
+                    <br>proof of origin, proof you are the creator
+                    <br>provenance of outputs and interactions within collaborative teams
+                    <br>we have deployed a silicon chip design provenance PoC
+                    <br>we have deployed a carbon claims PoC
+                    <br>we are working towards fulfilling a Pharma compliance issue
+                </p>
+                <img src="img/benefits.jpeg" alt="Scene 9">
+            </div>
         </div>
         <div class="navigation">
             <button onclick="prevSlide()">Previous</button>
