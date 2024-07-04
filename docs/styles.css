@@ -1,0 +1,38 @@
+body, html {
+    margin: 0;
+    padding: 0;
+    height: 100%;
+}
+
+.panel {
+    width: 80%;
+    height: 50vh;
+    margin: 0 auto;
+    overflow: hidden;
+    border: 1px solid #ccc;
+    position: relative;
+}
+
+.slideshow-container {
+    display: flex;
+    transition: transform 0.5s ease-in-out;
+    height: 100%;
+}
+
+.slide {
+    min-width: 100%;
+    height: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 2em;
+    background-color: #f3f3f3;
+    border-right: 1px solid #ccc;
+}
+
+.navigation {
+    position: absolute;
+    bottom: 10px;
+    width: 100%;
+    text-align: center;
+}
