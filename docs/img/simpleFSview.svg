@@ -1,0 +1,106 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+<svg version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0" y="0" width="800" height="180" viewBox="0, 0, 800, 180">
+  <g id="Layer_1">
+    <g>
+      <g>
+        <path d="M53,15 L153,15 L153,175 L53,175 z" fill="#CBCBCB"/>
+        <path d="M53,15 L153,15 L153,175 L53,175 z" fill-opacity="0" stroke="#000000" stroke-width="1"/>
+      </g>
+      <text transform="matrix(1, 0, 0, 1, 92.172, 30.5)">
+        <tspan x="-19.172" y="4.5" font-family="ArialMT" font-size="14" fill="#000000">Magic</tspan>
+      </text>
+      <g>
+        <path d="M53,55 L153,55" fill="#000000"/>
+        <path d="M53,55 L153,55" fill-opacity="0" stroke="#000000" stroke-width="1"/>
+      </g>
+      <text transform="matrix(1, 0, 0, 1, 94.117, 70.5)">
+        <tspan x="-21.117" y="4.5" font-family="ArialMT" font-size="14" fill="#000000">Blocks</tspan>
+      </text>
+      <g>
+        <path d="M53,95 L153,95" fill="#000000"/>
+        <path d="M53,95 L153,95" fill-opacity="0" stroke="#000000" stroke-width="1"/>
+      </g>
+      <text transform="matrix(1, 0, 0, 1, 111.634, 110.5)">
+        <tspan x="-38.634" y="4.5" font-family="ArialMT" font-size="14" fill="#000000">InodeBlocks</tspan>
+      </text>
+      <g>
+        <path d="M53,135 L153,135" fill="#000000"/>
+        <path d="M53,135 L153,135" fill-opacity="0" stroke="#000000" stroke-width="1"/>
+      </g>
+      <text transform="matrix(1, 0, 0, 1, 94.517, 150.5)">
+        <tspan x="-21.517" y="4.5" font-family="ArialMT" font-size="14" fill="#000000">Inodes</tspan>
+      </text>
+    </g>
+    <text transform="matrix(0, -1, 1, 0, 30.5, 96.5)">
+      <tspan x="-42.138" y="4.5" font-family="ArialMT" font-size="14" fill="#000000">16 bytes total</tspan>
+    </text>
+    <g>
+      <path d="M200,50 L301.071,50 L301.071,130 L200,130 z" fill="#DDDDDD"/>
+      <path d="M200,50 L301.071,50 L301.071,130 L200,130 z" fill-opacity="0" stroke="#000000" stroke-width="1"/>
+    </g>
+    <text transform="matrix(1, 0, 0, 1, 250.241, 87.5)">
+      <tspan x="-38.241" y="4.5" font-family="ArialMT" font-size="14" fill="#000000">Super Block</tspan>
+    </text>
+    <g>
+      <path d="M301.071,50 L341.5,50 L341.5,130 L301.071,130 z" fill="#7D7D7D"/>
+      <path d="M301.071,50 L341.5,50 L341.5,130 L301.071,130 z" fill-opacity="0" stroke="#000000" stroke-width="1"/>
+    </g>
+    <g>
+      <path d="M341.5,50 L381.929,50 L381.929,130 L341.5,130 z" fill="#7D7D7D"/>
+      <path d="M341.5,50 L381.929,50 L381.929,130 L341.5,130 z" fill-opacity="0" stroke="#000000" stroke-width="1"/>
+    </g>
+    <g>
+      <path d="M381.929,50 L422.357,50 L422.357,130 L381.929,130 z" fill="#7D7D7D"/>
+      <path d="M381.929,50 L422.357,50 L422.357,130 L381.929,130 z" fill-opacity="0" stroke="#000000" stroke-width="1"/>
+    </g>
+    <g>
+      <path d="M422.357,50 L462.786,50 L462.786,130 L422.357,130 z" fill="#7D7D7D"/>
+      <path d="M422.357,50 L462.786,50 L462.786,130 L422.357,130 z" fill-opacity="0" stroke="#000000" stroke-width="1"/>
+    </g>
+    <g>
+      <text transform="matrix(1, 0, 0, 1, 374.983, 23.5)">
+        <tspan x="-18.017" y="4.5" font-family="ArialMT" font-size="14" fill="#000000">Inode</tspan>
+      </text>
+      <text transform="matrix(1, 0, 0, 1, 378.083, 36.5)">
+        <tspan x="-21.117" y="4.5" font-family="ArialMT" font-size="14" fill="#000000">Blocks</tspan>
+      </text>
+    </g>
+    <g>
+      <path d="M462.786,50 L563.857,50 L563.857,130 L462.786,130 z" fill="#A6A6A6"/>
+      <path d="M462.786,50 L563.857,50 L563.857,130 L462.786,130 z" fill-opacity="0" stroke="#000000" stroke-width="1"/>
+    </g>
+    <text transform="matrix(1, 0, 0, 1, 513.321, 87.5)">
+      <tspan x="-34.348" y="4.5" font-family="ArialMT" font-size="14" fill="#000000">Data Block</tspan>
+    </text>
+    <g>
+      <path d="M563.857,50 L664.929,50 L664.929,130 L563.857,130 z" fill="#A6A6A6"/>
+      <path d="M563.857,50 L664.929,50 L664.929,130 L563.857,130 z" fill-opacity="0" stroke="#000000" stroke-width="1"/>
+    </g>
+    <text transform="matrix(1, 0, 0, 1, 614.393, 87.5)">
+      <tspan x="-34.348" y="4.5" font-family="ArialMT" font-size="14" fill="#000000">Data Block</tspan>
+    </text>
+    <g>
+      <path d="M664.929,50 L766,50 L766,130 L664.929,130 z" fill="#A6A6A6"/>
+      <path d="M664.929,50 L766,50 L766,130 L664.929,130 z" fill-opacity="0" stroke="#000000" stroke-width="1"/>
+    </g>
+    <text transform="matrix(1, 0, 0, 1, 715.464, 87.5)">
+      <tspan x="-34.348" y="4.5" font-family="ArialMT" font-size="14" fill="#000000">Data Block</tspan>
+    </text>
+    <text transform="matrix(1, 0, 0, 1, 252.348, 154.5)">
+      <tspan x="-13.348" y="17" font-family="Helvetica-Bold" font-size="48" fill="#000000">0</tspan>
+    </text>
+    <text transform="matrix(1, 0, 0, 1, 378.083, 154.5)">
+      <tspan x="-13.348" y="17" font-family="Helvetica-Bold" font-size="48" fill="#000000">1</tspan>
+    </text>
+    <text transform="matrix(1, 0, 0, 1, 518.652, 154.5)">
+      <tspan x="-13.348" y="17" font-family="Helvetica-Bold" font-size="48" fill="#000000">2</tspan>
+    </text>
+    <text transform="matrix(1, 0, 0, 1, 620.652, 154.5)">
+      <tspan x="-13.348" y="17" font-family="Helvetica-Bold" font-size="48" fill="#000000">3</tspan>
+    </text>
+    <text transform="matrix(1, 0, 0, 1, 720.652, 154.5)">
+      <tspan x="-13.348" y="17" font-family="Helvetica-Bold" font-size="48" fill="#000000">4</tspan>
+    </text>
+  </g>
+</svg>
