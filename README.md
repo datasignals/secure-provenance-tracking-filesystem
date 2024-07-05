@@ -37,7 +37,7 @@ Steps
 =====
 1. Clone the Repository:
 
-      `git clone https://github.com/datasignals/secure-provenance-tracking-filesystem.git`<br>
+      `git clone https://github.com/datasignals/secure-provenance-tracking-filesystem.git`
       `cd secure-provenance-tracking-filesystem`
 
 2. Install Dependencies:
@@ -48,12 +48,14 @@ Steps
 3. Configure Redis Cluster:
 
       Set up your Redis Cluster with 3 node with ports 6380,6381,6382.
-            - Install Redis : https://redis.io/docs/latest/operate/oss_and_stack/install/install-redis/
+            - Install Redis : 
+                  https://redis.io/docs/latest/operate/oss_and_stack/install/install-redis/
 		- To create redis cluster somewhere in system
 			- $ `mkdir Redis Cluster`
 			- $ `cd Redis Cluster`
  			- create three files with bwlow config: redis-6380.conf, redis-6381.conf, redis-6382.conf
-                        `# Change port 
+                  ```sh
+                        # Change port 
                         port 6380 
 
                         #Expose the port
@@ -69,13 +71,14 @@ Steps
                         cluster-enabled yes
 
                         # Set Password
-                        requirepass 0rangerY`
-            - In Redis Cluster folder,
-                  $ `mkdir Redis_database`
-                  $ `cd Redis_database`
-                  $ `mkdir redis-6380`
-                  $ `mkdir redis-6381`
-                  $ `mkdir redis-6382`
+                        requirepass 0rangerY
+                  ```
+            - In Redis Cluster folder: 
+                  - $ `mkdir Redis_database`
+                  - $ `cd Redis_database`
+                  - $ `mkdir redis-6380`
+                  - $ `mkdir redis-6381`
+                  - $ `mkdir redis-6382`
             - To Run Redis Cluster run below commands in 4 different terminals at Redis Cluster folder.
                   $ `redis-server redis-6380.conf`
                   $ `redis-server redis-6381.conf`
@@ -92,9 +95,9 @@ Steps
 		$ `scripts/run_nodes.sh`
 
 5. Configure Kafka and Zookeeper:
-      $ brew install kafka
-      $ brew services start kafka
-      $ brew services start zookeeper
+      - $ `brew install kafka`
+      - $ `brew services start kafka`
+      - $ `brew services start zookeeper`
 
 5. Now to Build the filesystem open terminal at secure-provenance-filesystem folder and run:
 
