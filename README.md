@@ -52,8 +52,8 @@ Steps
 		- To create redis cluster somewhere in system
 			- $ `mkdir Redis Cluster`
 			- $ `cd Redis Cluster`
- 			- create three files with bwlow config: redis-6380.conf, redis-6381.conf, redis-6382.conf
-                        ```sh
+ 			- create three files with below config: redis-6380.conf, redis-6381.conf, redis-6382.conf
+``` shell
                         # Change port 
                         port 6380 
 
@@ -71,7 +71,7 @@ Steps
 
                         # Set Password
                         requirepass 0rangerY
-                        ```
+```
             - In Redis Cluster folder: 
                   - $ `mkdir Redis_database`
                   - $ `cd Redis_database`
