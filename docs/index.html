@@ -10,45 +10,61 @@
     <div class="panel">
         <div class="slideshow-container">
             <div class="slide">
-                <p class="slide-text">This github repo contains a specialised network filesystem server.</p>
-                    <p>A filesystem anchored in blockchain for immutable traceability.
+                <p class="slide-text">
+                    This github repo contains a specialised network filesystem server</p>
+                <p>A filesystem anchored in blockchain for immutable traceability
                     <br>It's the audit of activity that is paramount, and equally,
-                    <br>for the capture of an audit to not be bypass'able is a necessity.
-                    <br>We are interested in the who, what, when.
+                    <br>for the capture of an audit to not be bypass'able is a necessity
+                    <br>We are interested in the who, what, when
                     <br>In Collaborative teams the who will come with a context, that too,
-                    <br>is important to track.
+                    <br>is important to track
                 </p>
+                <p>We call this the Provenance Tracking Filesystem</p>
             </div>
             <div class="slide">
-                <p class="slide-text">We start by creating a bespoke NFS in Rust<br>that adheres to the NFS interface spec</p>
+                <p class="slide-text">
+                    We started by creating a specialised NFS in Rust and
+                    <br>therefore one that adheres to the NFS interface spec</p>
                 <img src="img/nfs.jpg" alt="Scene 1">
             </div>
             <div class="slide">
-                    <p class="slide-text line-height-control">Here's a simple view of the FS metadata and data we must trap and store<br>
-                        in order that we have all the data to magic up a filesystem</p>
+                    <p class="slide-text line-height-control">
+                        Here's a simple view of a posix filesystem metadata and data
+                        <br>we must trap and store in order that we have all the data
+                        <br>required to later magic up a virtual filesystem</p>
                     <img src="img/simpleFSview.png" alt="Scene 2">
             </div>
             <div class="slide">
-                <p class="slide-text">The NFS interface provides the hooks for us to grab the FS data and metadata
-                    <br>A secret sharing approach is a intrinsic part of our protocol
-                    <br>Additionally it provides a significant layer of data security & DDOS defence
+                <p class="slide-text">
+                    The NFS interface provides the hooks for us to grab the metadata and data
+                    <br>To meet the goals set out earlier, a secret sharing approach is
+                    <br>introduced as part of our protocol
+                    <br>Secret sharing provides additional benefits including
+                    <br>a significant layer of data security and DDOS defence
                 </p>
                 <img src="img/shares.png" alt="Scene 3">
             </div>
             <div class="slide">
-                <p class="slide-text">The compute that underpines the algorithm runs off-chain presently
-                    <br>It feeds an OCW with audit points from inside the algorithm
+                <p class="slide-text">We forked Aleph Zero to create a bespoke state machine to support our protocol
+                    <br>The compute that underpins the protocol's algorithms presently run off-chain
+                    <br>The compute feeds an OCW with audit points from inside the algorithms
+                    <br>In terms of general blockchain functionality zk-rollups is our target tech feature
+                    <br>JAM does theorectically offer more and better options
+                    <br>
                 </p>
                 <img src="img/alephzero.jpeg" alt="Scene 4">
             </div>
             <div class="slide">
-                <p class="slide-text">Smart contracts are used by the NFS to authenticate and permission access to data
+                <p class="slide-text">Smart contracts are used by the specialised NFS
+                    <br>They facilitate authentication and permissioned access to data
                 </p>
                 <img src="img/contract.png" alt="Scene 5">
             </div>
             <div class="slide">
                 <p class="slide-text">The result is a lightweight data substrate for dApps and apps alike
-                    <br>One that provides intrinsic provenance tracking at the file level
+                    <br>One that provides intrinsic provenance tracking
+                    <br>- at the file level
+                    <br>- from the team and collaboration perspective
                 </p>
                 <img src="img/substrate.jpeg" alt="Scene 6">
             </div>
@@ -60,10 +76,10 @@
                 <img src="img/plug.png" alt="Scene 7">
             </div>
             <div class="slide">
-                <p class="slide-text">We are currently working on
-                    <br>- ZNPs that attest to that the verified compiled instance of the algorithm used
-                    <br>- making a web3 wallet the basis for authentication
+                <p class="slide-text">We are currently working on:
                     <br>- launching a direct to market pluggable web3 based service
+                    <br>- making a web3 wallet the basis for authentication
+                    <br>- ZNPs that attest to that the verified compiled instance of the algorithm used
                 </p>
                 <img src="img/roadmap.jpeg" alt="Scene 8">
             </div>
@@ -72,7 +88,8 @@
                     Benefits include:
                     <br>- proof of origin, proof you are the creator, design counter intelligence
                     <br>- provenance of outputs and interactions within collaborative teams
-                    <br><br>- we have deployed a silicon chip design provenance PoC
+                    <br><br>- we are deployed with a silicon chip design provenance PoC
+                    <br>- we are deployed with an energy IoT PoC
                     <br>- we are working towards fulfilling a Pharma compliance issue
                 </p>
                 <img src="img/benefits.jpeg" alt="Scene 9">
