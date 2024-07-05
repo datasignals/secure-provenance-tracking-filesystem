@@ -37,7 +37,7 @@ Steps
 =====
 1. Clone the Repository:
 
-      `git clone https://github.com/datasignals/secure-provenance-tracking-filesystem.git`
+      `git clone https://github.com/datasignals/secure-provenance-tracking-filesystem.git`<br>
       `cd secure-provenance-tracking-filesystem`
 
 2. Install Dependencies:
@@ -46,7 +46,6 @@ Steps
       - $ `cargo build`
 
 3. Configure Redis Cluster:
-
       Set up your Redis Cluster with 3 node with ports 6380,6381,6382.
             - Install Redis : 
                   https://redis.io/docs/latest/operate/oss_and_stack/install/install-redis/
@@ -54,7 +53,7 @@ Steps
 			- $ `mkdir Redis Cluster`
 			- $ `cd Redis Cluster`
  			- create three files with bwlow config: redis-6380.conf, redis-6381.conf, redis-6382.conf
-                  ```sh
+                        ```sh
                         # Change port 
                         port 6380 
 
@@ -72,7 +71,7 @@ Steps
 
                         # Set Password
                         requirepass 0rangerY
-                  ```
+                        ```
             - In Redis Cluster folder: 
                   - $ `mkdir Redis_database`
                   - $ `cd Redis_database`
