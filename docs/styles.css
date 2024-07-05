@@ -53,3 +53,32 @@ body, html {
     max-height: 50%; /* Adjust this value as needed */
     object-fit: contain; /* Ensures the image scales down while maintaining aspect ratio */
 }
+
+/* Add media query for mobile devices */
+@media (max-width: 600px) {
+    .slideshow-container {
+        width: 100%;
+        overflow: hidden;
+    }
+
+    .slide {
+        width: 100%;
+        box-sizing: border-box;
+        padding: 10px;
+    }
+
+    .slide img {
+        max-width: 100%;
+        height: auto;
+    }
+
+    .navigation {
+        display: flex;
+        justify-content: space-between;
+    }
+
+    .navigation button {
+        flex: 1;
+        margin: 5px;
+    }
+}
