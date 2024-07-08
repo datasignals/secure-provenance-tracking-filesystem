@@ -105,7 +105,7 @@ Steps
 6. Run the FileSystem:
       - Create below folder somewhere in System: 
             $ `mkdir mnt`
-            $ `cd mkdir`
+            $ `cd mnt`
             $ `mkdir nfs`
       - Now run below comand in terminal at secure-provenance-filesystem folder giving nfs absolute path
             `./target/release/lockular_nfs /mnt/nfs`
