@@ -3,8 +3,8 @@
 <svg version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0" y="0" width="560" height="250" viewBox="0, 0, 560, 250">
   <g id="Layer_1">
     <path d="M363.926,32.959 L552.095,32.959 L552.095,241.249 L363.926,241.249 z" fill-opacity="0" stroke="#000000" stroke-width="1"/>
-    <text transform="matrix(1, 0, 0, 1, 457.147, 16.959)">
-      <tspan x="-30.222" y="6" font-family="ArialMT" font-size="20" fill="#000000">Server</tspan>
+    <text transform="matrix(1, 0, 0, 1, 456.878, 16.959)">
+      <tspan x="-29.953" y="6" font-family="ArialMT" font-size="20" fill="#000000">Server</tspan>
     </text>
     <g>
       <path d="M383.926,52.959 L534.225,52.959 L534.225,102.959 L383.926,102.959 z" fill="#FFFFFF"/>
@@ -17,47 +17,62 @@
       <path d="M383.926,112.959 L441.215,112.959 L441.215,212.959 L383.926,212.959 z" fill="#DDDDDD"/>
       <path d="M383.926,112.959 L441.215,112.959 L441.215,212.959 L383.926,212.959 z" fill-opacity="0" stroke="#000000" stroke-width="1"/>
     </g>
-    <text transform="matrix(1, 0, 0, 1, 417.57, 146.459)">
-      <tspan x="-23.645" y="-3.5" font-family="ArialMT" font-size="14" fill="#000000">NFS</tspan>
-      <tspan x="-23.645" y="12.5" font-family="ArialMT" font-size="14" fill="#000000">server</tspan>
-    </text>
+    <g>
+      <text transform="matrix(1, 0, 0, 1, 408.425, 138.459)">
+        <tspan x="-14.5" y="4.5" font-family="ArialMT" font-size="14" fill="#000000">NFS</tspan>
+      </text>
+      <text transform="matrix(1, 0, 0, 1, 413.873, 154.459)">
+        <tspan x="-19.948" y="4.5" font-family="ArialMT" font-size="14" fill="#000000">server</tspan>
+      </text>
+    </g>
     <g>
       <g>
         <path d="M453.761,112.959 L534.533,112.959 L534.533,212.959 L453.761,212.959 z" fill="#FFFFFF"/>
         <path d="M453.761,112.959 L534.533,112.959 L534.533,212.959 L453.761,212.959 z" fill-opacity="0" stroke="#000000" stroke-width="1"/>
       </g>
-      <text transform="matrix(1, 0, 0, 1, 497.354, 146.459)">
-        <tspan x="-32.527" y="-3.5" font-family="ArialMT" font-size="14" fill="#000000">UNIX</tspan>
-        <tspan x="-32.527" y="12.5" font-family="ArialMT" font-size="14" fill="#000000">filesystem</tspan>
-      </text>
+      <g>
+        <text transform="matrix(1, 0, 0, 1, 482.051, 138.459)">
+          <tspan x="-17.224" y="4.5" font-family="ArialMT" font-size="14" fill="#000000">UNIX</tspan>
+        </text>
+        <text transform="matrix(1, 0, 0, 1, 496.444, 154.459)">
+          <tspan x="-31.617" y="4.5" font-family="ArialMT" font-size="14" fill="#000000">filesystem</tspan>
+        </text>
+      </g>
     </g>
     <g>
       <path d="M245.786,186.039 L388.941,184.255" fill="#000000"/>
       <g>
         <path d="M245.786,186.039 L377.142,184.402" fill-opacity="0" stroke="#000000" stroke-width="2"/>
-        <path d="M377.187,188.002 L386.742,184.282 L377.097,180.802 z" fill="#000000" fill-opacity="1" stroke="#000000" stroke-width="2" stroke-opacity="1"/>
+        <g>
+          <path d="M377.187,188.002 L386.742,184.282 L377.097,180.802 z" fill="#000000"/>
+          <path d="M377.187,188.002 L386.742,184.282 L377.097,180.802 z" fill-opacity="0" stroke="#000000" stroke-width="2"/>
+        </g>
       </g>
     </g>
     <path d="M320.343,185.459 C320.343,208.379 311.807,226.959 301.277,226.959 C290.747,226.959 282.21,208.379 282.21,185.459 C282.21,162.539 290.747,143.959 301.277,143.959 C311.807,143.959 320.343,162.539 320.343,185.459 z" fill="#7D7D7D"/>
     <text transform="matrix(1, 0, 0, 1, 312.599, 132.057)">
       <tspan x="-41.348" y="4.5" font-family="ArialMT" font-size="14" fill="#000000">NFS protocol</tspan>
     </text>
-    <text transform="matrix(1, 0, 0, 1, 303.21, 238.459)">
-      <tspan x="-18.133" y="4.5" font-family="ArialMT" font-size="14" fill="#000000">RPC</tspan>
+    <text transform="matrix(1, 0, 0, 1, 300.356, 238.459)">
+      <tspan x="-15.279" y="4.5" font-family="ArialMT" font-size="14" fill="#000000">RPC</tspan>
     </text>
     <path d="M6.528,32.959 L269.251,32.959 L269.251,241.249 L6.528,241.249 z" fill-opacity="0" stroke="#000000" stroke-width="1"/>
-    <text transform="matrix(1, 0, 0, 1, 134.455, 16.959)">
-      <tspan x="-27.927" y="6" font-family="ArialMT" font-size="20" fill="#000000">Client</tspan>
+    <text transform="matrix(1, 0, 0, 1, 132.594, 16.959)">
+      <tspan x="-26.066" y="6" font-family="ArialMT" font-size="20" fill="#000000">Client</tspan>
     </text>
     <g>
       <g>
         <path d="M26.528,52.959 L112.923,52.959 L112.923,112.959 L26.528,112.959 z" fill="#FFFFFF"/>
         <path d="M26.528,52.959 L112.923,52.959 L112.923,112.959 L26.528,112.959 z" fill-opacity="0" stroke="#000000" stroke-width="1"/>
       </g>
-      <text transform="matrix(1, 0, 0, 1, 75.197, 76.127)">
-        <tspan x="-37.726" y="-5.833" font-family="ArialMT" font-size="14" fill="#000000">Application</tspan>
-        <tspan x="-37.726" y="10.167" font-family="ArialMT" font-size="14" fill="#000000">program</tspan>
-      </text>
+      <g>
+        <text transform="matrix(1, 0, 0, 1, 72.216, 65.794)">
+          <tspan x="-34.745" y="4.5" font-family="ArialMT" font-size="14" fill="#000000">Application</tspan>
+        </text>
+        <text transform="matrix(1, 0, 0, 1, 64.036, 81.794)">
+          <tspan x="-26.565" y="4.5" font-family="ArialMT" font-size="14" fill="#000000">program</tspan>
+        </text>
+      </g>
     </g>
     <g>
       <path d="M26.528,129.959 L254.965,129.959 L254.965,158.658 L26.528,158.658 z" fill="#FFFFFF"/>
@@ -70,10 +85,14 @@
       <path d="M26.528,173.626 L97.771,173.626 L97.771,229.959 L26.528,229.959 z" fill="#FFFFFF"/>
       <path d="M26.528,173.626 L97.771,173.626 L97.771,229.959 L26.528,229.959 z" fill-opacity="0" stroke="#000000" stroke-width="1"/>
     </g>
-    <text transform="matrix(1, 0, 0, 1, 67.15, 207.126)">
-      <tspan x="-30.622" y="-3.5" font-family="ArialMT" font-size="14" fill="#000000">UNIX</tspan>
-      <tspan x="-30.622" y="12.5" font-family="ArialMT" font-size="14" fill="#000000">filesyste</tspan>
-    </text>
+    <g>
+      <text transform="matrix(1, 0, 0, 1, 52.792, 199.126)">
+        <tspan x="-20.454" y="4.5" font-family="ArialMT" font-size="14" fill="#000000">UNIX</tspan>
+      </text>
+      <text transform="matrix(1, 0, 0, 1, 66.725, 223.126)">
+        <tspan x="-34.388" y="-3.5" font-family="ArialMT" font-size="14" fill="#000000">filesystem</tspan>
+      </text>
+    </g>
     <g>
       <path d="M174.87,173.626 L254.965,173.626 L254.965,229.959 L174.87,229.959 z" fill="#DDDDDD"/>
       <path d="M174.87,173.626 L254.965,173.626 L254.965,229.959 L174.87,229.959 z" fill-opacity="0" stroke="#000000" stroke-width="1"/>
@@ -85,19 +104,27 @@
       <path d="M103.802,173.626 L171.471,173.626 L171.471,229.959 L103.802,229.959 z" fill="#FFFFFF"/>
       <path d="M103.802,173.626 L171.471,173.626 L171.471,229.959 L103.802,229.959 z" fill-opacity="0" stroke="#000000" stroke-width="1"/>
     </g>
-    <text transform="matrix(1, 0, 0, 1, 137.637, 207.126)">
-      <tspan x="-32.334" y="-3.5" font-family="ArialMT" font-size="14" fill="#000000">Other</tspan>
-      <tspan x="-32.334" y="12.5" font-family="ArialMT" font-size="14" fill="#000000">filesystem</tspan>
-    </text>
+    <g>
+      <text transform="matrix(1, 0, 0, 1, 123.31, 199.126)">
+        <tspan x="-18.007" y="4.5" font-family="ArialMT" font-size="14" fill="#000000">Other</tspan>
+      </text>
+      <text transform="matrix(1, 0, 0, 1, 136.92, 215.126)">
+        <tspan x="-31.617" y="4.5" font-family="ArialMT" font-size="14" fill="#000000">filesystem</tspan>
+      </text>
+    </g>
     <g>
       <g>
         <path d="M133.859,52.959 L220.255,52.959 L220.255,112.959 L133.859,112.959 z" fill="#FFFFFF"/>
         <path d="M133.859,52.959 L220.255,52.959 L220.255,112.959 L133.859,112.959 z" fill-opacity="0" stroke="#000000" stroke-width="1"/>
       </g>
-      <text transform="matrix(1, 0, 0, 1, 182.529, 76.127)">
-        <tspan x="-37.726" y="-5.833" font-family="ArialMT" font-size="14" fill="#000000">Application</tspan>
-        <tspan x="-37.726" y="10.167" font-family="ArialMT" font-size="14" fill="#000000">program</tspan>
-      </text>
+      <g>
+        <text transform="matrix(1, 0, 0, 1, 179.548, 65.794)">
+          <tspan x="-34.745" y="4.5" font-family="ArialMT" font-size="14" fill="#000000">Application</tspan>
+        </text>
+        <text transform="matrix(1, 0, 0, 1, 171.368, 81.794)">
+          <tspan x="-26.565" y="4.5" font-family="ArialMT" font-size="14" fill="#000000">program</tspan>
+        </text>
+      </g>
     </g>
   </g>
 </svg>
