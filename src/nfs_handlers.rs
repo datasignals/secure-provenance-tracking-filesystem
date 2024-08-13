@@ -77,6 +77,9 @@ pub async fn handle_nfs(
     output: &mut impl Write,
     context: &RPCContext,
 ) -> Result<(), anyhow::Error> {
+
+    println!("we are in handle_nfs: {:?}", NFSProgram::from_u32(call.proc));
+
     if call.vers != nfs::VERSION {
         warn!(
             "Invalid NFS Version number {} != {}",
@@ -180,6 +183,22 @@ pub async fn nfsproc3_lookup(
     dirops.deserialize(input)?;
     debug!("nfsproc3_lookup({:?},{:?}) ", xid, dirops);
 
+    println!("Intercepting lookup for: {:?}", dirops.name);
+    // Custom logic to intercept the lookup
+    if let Some(custom_id) = custom_lookup_logic(&dirops.name) {
+        let obj_attr = match context.vfs.getattr(custom_id).await {
+            Ok(v) => nfs::post_op_attr::attributes(v),
+            Err(_) => nfs::post_op_attr::Void,
+        };
+        debug!("lookup success {:?} --> {:?}", xid, obj_attr);
+        make_success_reply(xid).serialize(output)?;
+        nfs::nfsstat3::NFS3_OK.serialize(output)?;
+        context.vfs.id_to_fh(custom_id).serialize(output)?;
+        obj_attr.serialize(output)?;
+        return Ok(());
+    }
+
+
     let dirid = context.vfs.fh_to_id(&dirops.dir);
     // if let Ok(id) = dirid {
     //     println!("Directory-ID: --------------------{}", id);
@@ -219,6 +238,18 @@ pub async fn nfsproc3_lookup(
         }
     }
     Ok(())
+}
+
+// Example custom lookup logic function
+fn custom_lookup_logic(name: &nfs::filename3) -> Option<nfs::fileid3> {
+    // Add your custom logic here to determine if the file should be considered to exist
+    // For example, you can check if the name matches a specific pattern
+    if name.as_ref() == b"arifwalletaddress/arif1.txt" {
+        // Return a custom file ID if the file should be considered to exist
+        Some(12345) // Example file ID
+    } else {
+        None
+    }
 }
 
 #[allow(non_camel_case_types)]
