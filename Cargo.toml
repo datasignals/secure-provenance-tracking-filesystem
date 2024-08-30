@@ -54,7 +54,8 @@ serde = { version = "1.0.201", features = ["derive"] }
 hex = "0.4.3"
 #num-traits = "0.2.19"
 rayon = "1.10.0"
-
+dashmap = "6.0.1"
+moka = { version = "0.12.8", features = ["future"] }
 
 
 #sp-application-crypto = "36.0.0"

@@ -10,6 +10,10 @@ use tokio::io::AsyncWriteExt;
 use tokio::net::TcpListener;
 use tokio::sync::mpsc;
 use tracing::{error, info};
+use moka::future::Cache;
+use std::time::Duration;
+use tokio::sync::RwLock;
+use std::collections::HashMap;
 
 /// A NFS Tcp Connection Handler
 pub struct NFSTcpListener<T: NFSFileSystem + Send + Sync + 'static> {
@@ -32,6 +36,7 @@ async fn process_socket(
     mut socket: tokio::net::TcpStream,
     context: RPCContext,
 ) -> Result<(), anyhow::Error> {
+    
     let (mut message_handler, mut socksend, mut msgrecvchan) = SocketMessageHandler::new(&context);
     let _ = socket.set_nodelay(true);
 
@@ -189,14 +194,54 @@ impl<T: NFSFileSystem + Send + Sync + 'static> NFSTcp for NFSTcpListener<T> {
 
     /// Loops forever and never returns handling all incoming connections.
     async fn handle_forever(&self) -> io::Result<()> {
+
+        let user_mount_info = Arc::new(RwLock::new(HashMap::new()));
+        
+        // Create a Moka cache with a time-to-live
+        let connection_map: Cache<String, String> = Cache::builder()
+            .max_capacity(1000)
+            .time_to_live(Duration::from_secs(10))  
+            .build();
+        let connection_map = Arc::new(connection_map);
+
+        let mut first_client_addr = None;
+
         loop {
             let (socket, _) = self.listener.accept().await?;
+
+
+            let client_addr = socket.peer_addr().unwrap().to_string();
+            
+            if first_client_addr.is_none() {
+                first_client_addr = Some(client_addr.clone());
+                // println!("First Client Addr: {}", client_addr);
+            } else {
+                let second_client_addr = client_addr.clone();
+                let first_addr = first_client_addr.clone().unwrap();
+                
+                // Insert into Moka cache
+                connection_map.insert(second_client_addr.clone(), first_addr.clone()).await;
+                
+                // println!(
+                //     "Mapped: Second Client Addr {} -> First Client Addr {}",
+                //     second_client_addr, first_addr
+                // );
+
+                // Reset for the next set of connections
+                first_client_addr = None;
+            }
+
+            
+            
             let context = RPCContext {
                 local_port: self.port,
                 client_addr: socket.peer_addr().unwrap().to_string(),
                 auth: crate::rpc::auth_unix::default(),
                 vfs: self.arcfs.clone(),
                 mount_signal: self.mount_signal.clone(),
+                connection_map: connection_map.clone(),
+                user_mount_info: user_mount_info.clone(),
+                
             };
             info!("Accepting socket {:?} {:?}", socket, context);
             tokio::spawn(async move {

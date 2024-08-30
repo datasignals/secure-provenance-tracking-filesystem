@@ -1,6 +1,7 @@
 #![allow(clippy::upper_case_acronyms)]
 #![allow(dead_code)]
 use crate::context::RPCContext;
+use anyhow::Result;
 use crate::nfs;
 use crate::rpc::*;
 use crate::vfs::VFSCapabilities;
@@ -149,6 +150,21 @@ pub async fn nfsproc3_lookup(
     let mut dirops = nfs::diropargs3::default();
     dirops.deserialize(input)?;
     debug!("nfsproc3_lookup({:?},{:?}) ", xid, dirops);
+
+    
+    let user = match get_user_from_addr(context).await {
+        Ok(user) => user,
+        Err(stat) => {
+            // Handle the error by returning the appropriate NFS response
+            make_success_reply(xid).serialize(output)?;
+            stat.serialize(output)?; // Serialize the error message or code
+            nfs::post_op_attr::Void.serialize(output)?; // Handle post-operation attributes
+            return Ok(());
+        }
+    };
+
+    // Continue processing with the valid user
+    println!("User: {:?}", user);
 
     let dirid = context.vfs.fh_to_id(&dirops.dir);
     // fail if unable to convert file handle
@@ -1042,6 +1058,7 @@ pub async fn nfsproc3_remove(
     context: &RPCContext,
 ) -> Result<(), anyhow::Error> {
     // if we do not have write capabilities
+    
     if !matches!(context.vfs.capabilities(), VFSCapabilities::ReadWrite) {
         warn!("No write capabilities.");
         make_success_reply(xid).serialize(output)?;
@@ -1523,4 +1540,21 @@ pub async fn nfsproc3_readlink(
         }
     }
     Ok(())
+}
+
+async fn get_user_from_addr(context: &RPCContext) -> Result<String, nfs::nfsstat3> {
+    
+    let operation_client_addr = context.client_addr.to_string();
+
+    let key = {
+        let map = context.user_mount_info.read().await;
+        map.iter()
+            .find_map(|(k, v)| if *v == operation_client_addr { Some(k.clone()) } else { None })
+    };
+
+    // let user: String = key.ok_or_else(|| anyhow::anyhow!("User key not provided"))?;
+    // Ok(user)
+    // Return an error early if the user is not found
+    key.ok_or_else(|| nfs::nfsstat3::NFS3ERR_IO)
+    
 }
