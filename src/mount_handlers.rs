@@ -159,7 +159,7 @@ pub async fn mountproc3_mnt(
 
     let user: String = user_key.ok_or_else(|| anyhow::anyhow!("User key not provided"))?;
 
-    // Retrieve the value associated with the key "abc".
+    // Retrieve the value associated with the key.
     let mount_client_addr:String = context.client_addr.to_string();
     if let Some(operation_client_addr) = context.connection_map.get(&mount_client_addr).await {
         context.user_mount_info.write().await.insert(user.clone(), operation_client_addr.clone());
@@ -168,22 +168,6 @@ pub async fn mountproc3_mnt(
         return Err(anyhow::anyhow!("Authentication failed"));
     }
     
-    // context.set_mount_point(user).await;
-
-    // Print the value of mount_point
-    // let mount_point_value = context.mount_point.read().await;
-    // println!("Context User after setting: {:?}", *mount_point_value);
-
-    // context.user_mount_info.write().await.insert(context.client_addr.to_string(), user.clone());
-
-    // println!("Context: {:?}", context.user_mount_info);
-    
-    // println!("Context: {:?}", context);
-    // match context.user_mount_info.read().await.get(&context.client_addr) {
-    //     Some(user) => println!("User associated with {} is: {}", context.client_addr, user),
-    //     None => println!("No user found for client address: {}", context.client_addr),
-    // }
-
     // Initialize the mount directory
     let _ = init_user_directory(&utf8path, &pool);
     
@@ -279,26 +263,31 @@ pub async fn mountproc3_umnt(
     path.deserialize(input)?;
     let utf8path = std::str::from_utf8(&path).unwrap_or_default();
     debug!("mountproc3_umnt({:?},{:?}) ", xid, utf8path);
-    if let Some(ref chan) = context.mount_signal {
-        let _ = chan.send(false).await;
-    }
+    
     
     // Parse user_key from the input stream
-    let mut user_key = None;
-    let options: Vec<&str> = utf8path.split('/').collect();
-
-    for option in options {
-        if option.starts_with("user_key=") {
-            user_key = Some(option.trim_start_matches("user_key=").to_string());
-        }
-    }
-
-    let user: String = user_key.ok_or_else(|| anyhow::anyhow!("User key not provided"))?;
+    let user_key = utf8path.split('/')
+        .find(|&option| option.starts_with("user_key="))
+        .map(|option| option.trim_start_matches("user_key=").to_string())
+        .ok_or_else(|| anyhow::anyhow!("User key not provided"))?;
 
     // Acquire a write lock on the user_mount_info HashMap
     let mut map = context.user_mount_info.write().await;
-    // Remove the key from the HashMap
-    map.remove(&user);
+   
+    // Remove the key from the HashMap and check if it was present
+    if let Some(removed_addr) = map.remove(&user_key) {
+        println!("Unmounted user: {}. Removed operation address: {}", user_key, removed_addr);
+    } else {
+        println!("Warning: User {} was not found in user_mount_info during unmount", user_key);
+    }
+
+    // Drop the write lock
+    drop(map);
+
+    // Send the unmount signal
+    if let Some(ref chan) = context.mount_signal {
+        let _ = chan.send(false).await;
+    }
 
     make_success_reply(xid).serialize(output)?;
     mountstat3::MNT3_OK.serialize(output)?;

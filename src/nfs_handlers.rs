@@ -164,7 +164,7 @@ pub async fn nfsproc3_lookup(
     };
 
     // Continue processing with the valid user
-    println!("User: {:?}", user);
+    // println!("User: {:?}", user);
 
     let dirid = context.vfs.fh_to_id(&dirops.dir);
     // fail if unable to convert file handle

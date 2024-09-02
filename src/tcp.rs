@@ -11,9 +11,10 @@ use tokio::net::TcpListener;
 use tokio::sync::mpsc;
 use tracing::{error, info};
 use moka::future::Cache;
-use std::time::Duration;
+// use std::time::Duration;
 use tokio::sync::RwLock;
 use std::collections::HashMap;
+use tokio::time::{sleep, timeout, Duration};
 
 /// A NFS Tcp Connection Handler
 pub struct NFSTcpListener<T: NFSFileSystem + Send + Sync + 'static> {
@@ -194,59 +195,125 @@ impl<T: NFSFileSystem + Send + Sync + 'static> NFSTcp for NFSTcpListener<T> {
 
     /// Loops forever and never returns handling all incoming connections.
     async fn handle_forever(&self) -> io::Result<()> {
-
         let user_mount_info = Arc::new(RwLock::new(HashMap::new()));
-        
-        // Create a Moka cache with a time-to-live
         let connection_map: Cache<String, String> = Cache::builder()
             .max_capacity(1000)
-            .time_to_live(Duration::from_secs(10))  
+            .time_to_live(Duration::from_secs(1))
             .build();
         let connection_map = Arc::new(connection_map);
-
-        let mut first_client_addr = None;
-
+        let operation_timeout = Duration::from_millis(100); // Adjust as needed
+        let separation_delay = Duration::from_millis(500); // Adjust as needed
+    
         loop {
-            let (socket, _) = self.listener.accept().await?;
-
-
-            let client_addr = socket.peer_addr().unwrap().to_string();
-            
-            if first_client_addr.is_none() {
-                first_client_addr = Some(client_addr.clone());
-                // println!("First Client Addr: {}", client_addr);
-            } else {
-                let second_client_addr = client_addr.clone();
-                let first_addr = first_client_addr.clone().unwrap();
-                
-                // Insert into Moka cache
-                connection_map.insert(second_client_addr.clone(), first_addr.clone()).await;
-                
-                // println!(
-                //     "Mapped: Second Client Addr {} -> First Client Addr {}",
-                //     second_client_addr, first_addr
-                // );
-
-                // Reset for the next set of connections
-                first_client_addr = None;
+            let mut client_addrs = Vec::new();
+            let mut is_mount = false;
+            let mut mount_count = 0;
+    
+            // Collect operations for a short duration
+            let collection_start = tokio::time::Instant::now();
+            while tokio::time::Instant::now().duration_since(collection_start) < separation_delay {
+                match timeout(operation_timeout, self.listener.accept()).await {
+                    Ok(Ok((socket, _))) => {
+                        let client_addr = socket.peer_addr().unwrap().to_string();
+                        client_addrs.push(client_addr.clone());
+    
+                        // Check if it's a mount operation
+                        if timeout(operation_timeout, socket.peek(&mut [0u8])).await.is_ok() {
+                            is_mount = true;
+                            mount_count += 1;
+                        }
+    
+                        // Spawn the process_socket task
+                        let context = RPCContext {
+                            local_port: self.port,
+                            client_addr,
+                            auth: crate::rpc::auth_unix::default(),
+                            vfs: self.arcfs.clone(),
+                            mount_signal: self.mount_signal.clone(),
+                            connection_map: connection_map.clone(),
+                            user_mount_info: user_mount_info.clone(),
+                        };
+                        tokio::spawn(async move {
+                            let _ = process_socket(socket, context).await;
+                        });
+                    }
+                    _ => break, // No more incoming connections or timeout
+                }
             }
-
-            
-            
-            let context = RPCContext {
-                local_port: self.port,
-                client_addr: socket.peer_addr().unwrap().to_string(),
-                auth: crate::rpc::auth_unix::default(),
-                vfs: self.arcfs.clone(),
-                mount_signal: self.mount_signal.clone(),
-                connection_map: connection_map.clone(),
-                user_mount_info: user_mount_info.clone(),
-                
-            };
-            info!("Accepting socket {:?} {:?}", socket, context);
-            tokio::spawn(async move {
-                let _ = process_socket(socket, context).await;
-            });
+    
+            // Process collected operations
+            if !client_addrs.is_empty() {
+                if is_mount && mount_count == 2 {
+                    // This is a mount operation (executed twice)
+                    if client_addrs.len() >= 2 {
+                        connection_map.insert(client_addrs[1].clone(), client_addrs[0].clone()).await;
+                    }
+                    info!("Processed mount operation: {:?}", client_addrs);
+                } else {
+                    // This is likely an unmount operation or a single mount execution
+                    info!("Processed unmount or single mount operation: {:?}", client_addrs);
+                }
+            }
+    
+            // Small delay before the next iteration
+            sleep(Duration::from_millis(10)).await;
         }
     }
+    
+    // async fn handle_forever(&self) -> io::Result<()> {
+
+    //     let user_mount_info = Arc::new(RwLock::new(HashMap::new()));
+        
+    //     // Create a Moka cache with a time-to-live
+    //     let connection_map: Cache<String, String> = Cache::builder()
+    //         .max_capacity(1000)
+    //         .time_to_live(Duration::from_secs(1))  
+    //         .build();
+    //     let connection_map = Arc::new(connection_map);
+
+    //     let mut first_client_addr = None;
+
+    //     loop {
+    //         let (socket, _) = self.listener.accept().await?;
+
+
+    //         let client_addr = socket.peer_addr().unwrap().to_string();
+            
+    //         if first_client_addr.is_none() {
+    //             first_client_addr = Some(client_addr.clone());
+    //             // println!("First Client Addr: {}", client_addr);
+    //         } else {
+    //             let second_client_addr = client_addr.clone();
+    //             let first_addr = first_client_addr.clone().unwrap();
+                
+    //             // Insert into Moka cache
+    //             connection_map.insert(second_client_addr.clone(), first_addr.clone()).await;
+                
+    //             // println!(
+    //             //     "Mapped: Second Client Addr {} -> First Client Addr {}",
+    //             //     second_client_addr, first_addr
+    //             // );
+
+    //             // Reset for the next set of connections
+    //             first_client_addr = None;
+    //         }
+
+            
+            
+    //         let context = RPCContext {
+    //             local_port: self.port,
+    //             client_addr: socket.peer_addr().unwrap().to_string(),
+    //             auth: crate::rpc::auth_unix::default(),
+    //             vfs: self.arcfs.clone(),
+    //             mount_signal: self.mount_signal.clone(),
+    //             connection_map: connection_map.clone(),
+    //             user_mount_info: user_mount_info.clone(),
+                
+    //         };
+    //         info!("Accepting socket {:?} {:?}", socket, context);
+    //         tokio::spawn(async move {
+    //             let _ = process_socket(socket, context).await;
+    //         });
+    //     }
+    // }
 }

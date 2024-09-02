@@ -133,21 +133,22 @@ impl FileMetadata {
 #[derive(Clone)]
 pub struct MirrorFS {
     data_store: Arc<dyn DataStore>,
-    nfs_module: Arc<NFSModule>, // Add NFSModule wrapped in Arc
+    // nfs_module: Arc<NFSModule>, // Add NFSModule wrapped in Arc
     active_writes: Arc<Mutex<HashMap<fileid3, ActiveWrite>>>,
     commit_semaphore: Arc<Semaphore>,
     
 }
 
 impl MirrorFS {
-    pub fn new(data_store: Arc<dyn DataStore>, nfs_module: Arc<NFSModule>) -> MirrorFS {
+    // pub fn new(data_store: Arc<dyn DataStore>, nfs_module: Arc<NFSModule>) -> MirrorFS {
+    pub fn new(data_store: Arc<dyn DataStore>) -> MirrorFS {
         // Create shared components for active writes
         let active_writes = Arc::new(Mutex::new(HashMap::new()));
         let commit_semaphore = Arc::new(Semaphore::new(10)); // Adjust based on your system's capabilities
 
         let mirror_fs = MirrorFS {
             data_store,
-            nfs_module,
+            // nfs_module,
             active_writes: active_writes.clone(),
             commit_semaphore: commit_semaphore.clone(),
         };
@@ -1162,7 +1163,7 @@ impl NFSFileSystem for MirrorFS {
 
             
 
-            let _ = self.nfs_module.trigger_event(&creation_time, "reassembled", &path, &user);
+            // let _ = self.nfs_module.trigger_event(&creation_time, "reassembled", &path, &user);
 
             
                 
@@ -1410,7 +1411,7 @@ impl NFSFileSystem for MirrorFS {
                     user = parts[1];
                 }
 
-        let _ = self.nfs_module.trigger_event(&creation_time, "disassembled", &path, &user);
+        // let _ = self.nfs_module.trigger_event(&creation_time, "disassembled", &path, &user);
 
         let metadata = self.get_metadata_from_id(id).await?;
 
@@ -2169,14 +2170,15 @@ async fn main() {
     }
     
     let redis_data_store = Arc::new(RedisDataStore::new().expect("Failed to create a share store interface"));
-    let nfs_module = match NFSModule::new().await {
-        Ok(module) => Arc::new(module),
-        Err(e) => {
-            eprintln!("Failed to create NFSModule: {}", e);
-            return;
-        }
-    };
-    let fs = MirrorFS::new(redis_data_store, nfs_module);
+    // let nfs_module = match NFSModule::new().await {
+    //     Ok(module) => Arc::new(module),
+    //     Err(e) => {
+    //         eprintln!("Failed to create NFSModule: {}", e);
+    //         return;
+    //     }
+    // };
+    // let fs = MirrorFS::new(redis_data_store, nfs_module);
+    let fs = MirrorFS::new(redis_data_store);
 
     let listener = NFSTcpListener::bind(&format!("0.0.0.0:{HOSTPORT}"), fs)
         .await
