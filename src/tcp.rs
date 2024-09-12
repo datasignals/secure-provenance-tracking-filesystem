@@ -14,9 +14,17 @@ use moka::future::Cache;
 // use std::time::Duration;
 use tokio::sync::RwLock;
 use std::collections::HashMap;
-use tokio::time::{sleep, timeout, Duration};
+use std::collections::VecDeque;
+use std::time::{Instant, Duration};
+use tokio::sync::Mutex;
 
 /// A NFS Tcp Connection Handler
+/// 
+struct ClientExecution {
+    address: String,
+    timestamp: Instant,
+}
+
 pub struct NFSTcpListener<T: NFSFileSystem + Send + Sync + 'static> {
     listener: TcpListener,
     port: u16,
@@ -201,65 +209,66 @@ impl<T: NFSFileSystem + Send + Sync + 'static> NFSTcp for NFSTcpListener<T> {
             .time_to_live(Duration::from_secs(1))
             .build();
         let connection_map = Arc::new(connection_map);
-        let operation_timeout = Duration::from_millis(100); // Adjust as needed
-        let separation_delay = Duration::from_millis(500); // Adjust as needed
-    
+        let recent_executions: Arc<Mutex<VecDeque<ClientExecution>>> = Arc::new(Mutex::new(VecDeque::new()));
+        
         loop {
-            let mut client_addrs = Vec::new();
-            let mut is_mount = false;
-            let mut mount_count = 0;
+            let (socket, _) = self.listener.accept().await?;
+            let client_address = socket.peer_addr().unwrap().to_string();
     
-            // Collect operations for a short duration
-            let collection_start = tokio::time::Instant::now();
-            while tokio::time::Instant::now().duration_since(collection_start) < separation_delay {
-                match timeout(operation_timeout, self.listener.accept()).await {
-                    Ok(Ok((socket, _))) => {
-                        let client_addr = socket.peer_addr().unwrap().to_string();
-                        client_addrs.push(client_addr.clone());
-    
-                        // Check if it's a mount operation
-                        if timeout(operation_timeout, socket.peek(&mut [0u8])).await.is_ok() {
-                            is_mount = true;
-                            mount_count += 1;
-                        }
-    
-                        // Spawn the process_socket task
-                        let context = RPCContext {
-                            local_port: self.port,
-                            client_addr,
-                            auth: crate::rpc::auth_unix::default(),
-                            vfs: self.arcfs.clone(),
-                            mount_signal: self.mount_signal.clone(),
-                            connection_map: connection_map.clone(),
-                            user_mount_info: user_mount_info.clone(),
-                        };
-                        tokio::spawn(async move {
-                            let _ = process_socket(socket, context).await;
-                        });
-                    }
-                    _ => break, // No more incoming connections or timeout
-                }
-            }
-    
-            // Process collected operations
-            if !client_addrs.is_empty() {
-                if is_mount && mount_count == 2 {
-                    // This is a mount operation (executed twice)
-                    if client_addrs.len() >= 2 {
-                        connection_map.insert(client_addrs[1].clone(), client_addrs[0].clone()).await;
-                    }
-                    info!("Processed mount operation: {:?}", client_addrs);
+            let now = Instant::now();
+
+            let mut executions = recent_executions.lock().await;
+            
+            // Remove any executions older than 10ms
+            while let Some(front) = executions.front() {
+                if now.duration_since(front.timestamp) > Duration::from_millis(10) {
+                    executions.pop_front();
                 } else {
-                    // This is likely an unmount operation or a single mount execution
-                    info!("Processed unmount or single mount operation: {:?}", client_addrs);
+                    break;
                 }
             }
+
+            // Check for mapping with the most recent execution
+            if let Some(last_execution) = executions.back() {
+                let duration = now.duration_since(last_execution.timestamp);
+                if duration <= Duration::from_millis(10) && last_execution.address != client_address {
+                    info!("Client address mapped: Previous: {}, Current: {}, Duration: {:?}",
+                          last_execution.address, client_address, duration);
+                    
+                    // Store the mapping in the Cache
+                    // connection_map.insert(, client_address.clone());
+                    connection_map.insert(client_address.clone(), last_execution.address.clone()).await;
     
-            // Small delay before the next iteration
-            sleep(Duration::from_millis(10)).await;
+                }
+            }
+
+            // Add the current execution to the queue
+            executions.push_back(ClientExecution {
+                address: client_address.clone(),
+                timestamp: now,
+            });
+
+            // Limit the queue size to prevent unbounded growth
+            if executions.len() > 100 {
+                executions.pop_front();
+            }
+            
+            let context = RPCContext {
+                local_port: self.port,
+                client_addr: client_address.clone(),
+                auth: crate::rpc::auth_unix::default(),
+                vfs: self.arcfs.clone(),
+                mount_signal: self.mount_signal.clone(),
+                connection_map: connection_map.clone(),
+                user_mount_info: user_mount_info.clone(),
+            };
+    
+            info!("Accepting socket {:?} {:?}", socket, context);
+            tokio::spawn(async move {
+                let _ = process_socket(socket, context).await;
+            });
         }
     }
-    
     // async fn handle_forever(&self) -> io::Result<()> {
 
     //     let user_mount_info = Arc::new(RwLock::new(HashMap::new()));

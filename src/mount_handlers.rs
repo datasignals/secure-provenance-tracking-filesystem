@@ -163,7 +163,7 @@ pub async fn mountproc3_mnt(
     let mount_client_addr:String = context.client_addr.to_string();
     if let Some(operation_client_addr) = context.connection_map.get(&mount_client_addr).await {
         context.user_mount_info.write().await.insert(user.clone(), operation_client_addr.clone());
-        println!("Operation Client Address': {}", operation_client_addr.clone());
+        println!("Operation Client Address: {}", operation_client_addr.clone());
     } else {
         return Err(anyhow::anyhow!("Authentication failed"));
     }
@@ -174,7 +174,7 @@ pub async fn mountproc3_mnt(
     {
         
         debug!("mountproc3_mnt({:?},{:?}) ", xid, utf8path);
-        if let Ok(fileid) = context.vfs.get_id_from_path(&utf8path, &mut conn).await {
+        if let Ok(fileid) = context.vfs.get_id_from_path("/", &mut conn).await {
             //println!("File ID: {:?}", fileid);
             //println!("FHandle: {:?}", context.vfs.id_to_fh(fileid).data);
             let response = mountres3_ok {

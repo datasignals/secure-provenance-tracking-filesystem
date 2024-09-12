@@ -83,11 +83,11 @@ pub trait NFSFileSystem: Sync {
     /// and this should return the id of the file "dir/a.txt"
     ///
     /// This method should be fast as it is used very frequently.
-    async fn lookup(&self, dirid: fileid3, filename: &filename3) -> Result<fileid3, nfsstat3>;
+    async fn lookup(&self, user: &str, dirid: fileid3, filename: &filename3) -> Result<fileid3, nfsstat3>;
 
     /// Returns the attributes of an id.
     /// This method should be fast as it is used very frequently.
-    async fn getattr(&self, id: fileid3) -> Result<fattr3, nfsstat3>;
+    async fn getattr(&self, user: &str, id: fileid3) -> Result<fattr3, nfsstat3>;
     //async fn getattr(&self, conn: &mut PooledConnection<RedisClusterConnectionManager>, path: &str) -> Result<fattr3, nfsstat3>;
 
 
@@ -162,6 +162,7 @@ pub trait NFSFileSystem: Sync {
     //
     async fn readdir(
         &self,
+        user: &str,
         dirid: fileid3,
         start_after: fileid3,
         max_entries: usize,
@@ -172,6 +173,7 @@ pub trait NFSFileSystem: Sync {
     /// this should return Err(nfsstat3::NFS3ERR_ROFS)
     async fn symlink(
         &self,
+        user: &str,
         dirid: fileid3,
         linkname: &filename3,
         symlink: &nfspath3,
@@ -207,18 +209,18 @@ pub trait NFSFileSystem: Sync {
     }
     /// Converts a complete path to a fileid.  Optional.
     /// The default implementation walks the directory structure with tokio::fs::OpenOptions()
-    async fn path_to_id(&self, path: &[u8]) -> Result<fileid3, nfsstat3> {
-        let splits = path.split(|&r| r == b'/');
-        let mut fid = self.root_dir();
-        println!("Root_Dir:--------{}", fid);
-        for component in splits {
-            if component.is_empty() {
-                continue;
-            }
-            fid = self.lookup(fid, &component.into()).await?;
-        }
-        Ok(fid)
-    }
+    // async fn path_to_id(&self, path: &[u8]) -> Result<fileid3, nfsstat3> {
+    //     let splits = path.split(|&r| r == b'/');
+    //     let mut fid = self.root_dir();
+    //     println!("Root_Dir:--------{}", fid);
+    //     for component in splits {
+    //         if component.is_empty() {
+    //             continue;
+    //         }
+    //         fid = self.lookup(fid, &component.into()).await?;
+    //     }
+    //     Ok(fid)
+    // }
 
 
     /// Get the ID for a given file/directory path

@@ -133,22 +133,21 @@ impl FileMetadata {
 #[derive(Clone)]
 pub struct MirrorFS {
     data_store: Arc<dyn DataStore>,
-    // nfs_module: Arc<NFSModule>, // Add NFSModule wrapped in Arc
+    nfs_module: Arc<NFSModule>, // Add NFSModule wrapped in Arc
     active_writes: Arc<Mutex<HashMap<fileid3, ActiveWrite>>>,
     commit_semaphore: Arc<Semaphore>,
     
 }
 
 impl MirrorFS {
-    // pub fn new(data_store: Arc<dyn DataStore>, nfs_module: Arc<NFSModule>) -> MirrorFS {
-    pub fn new(data_store: Arc<dyn DataStore>) -> MirrorFS {
+    pub fn new(data_store: Arc<dyn DataStore>, nfs_module: Arc<NFSModule>) -> MirrorFS {
         // Create shared components for active writes
         let active_writes = Arc::new(Mutex::new(HashMap::new()));
         let commit_semaphore = Arc::new(Semaphore::new(10)); // Adjust based on your system's capabilities
 
         let mirror_fs = MirrorFS {
             data_store,
-            // nfs_module,
+            nfs_module,
             active_writes: active_writes.clone(),
             commit_semaphore: commit_semaphore.clone(),
         };
@@ -318,6 +317,7 @@ impl MirrorFS {
     }
 
     async fn create_node(&self, node_type: &str, fileid: fileid3, path: &str) -> RedisResult<()> {
+       
        
         let (user_id, hash_tag) = MirrorFS::get_user_id_and_hash_tag().await;
       
@@ -1051,6 +1051,25 @@ impl MirrorFS {
         Ok(())
     }
 
+    async fn is_path_accessible(&self, user: &str, path: &str) -> bool {
+        
+        let mount_user = format!("/{}", user);
+
+        // The root directory is always accessible
+        if path == "/" {
+            return true;
+        }
+    
+        // Check if the path is within the user's mount point
+        if path.starts_with(&mount_user) {
+            return true;
+        }
+    
+        // Add any other allowed paths here
+    
+        false
+    }
+
 }
 
 #[async_trait]
@@ -1062,18 +1081,26 @@ impl NFSFileSystem for MirrorFS {
         VFSCapabilities::ReadWrite
     }
  
-    async fn lookup(&self, dirid: fileid3, filename: &filename3) -> Result<fileid3, nfsstat3> {
+    async fn lookup(&self, user: &str, dirid: fileid3, filename: &filename3) -> Result<fileid3, nfsstat3> {
         
         {           
 
         let filename_str = OsStr::from_bytes(filename).to_str().ok_or(nfsstat3::NFS3ERR_IO)?;
 
         // Handle the root directory case
-        if dirid == 0 {
+        if dirid == 1 {
             
-            let child_path = format!("/{}", filename_str);
+            // let child_path = format!("/{}", filename_str);
+           
+            // Construct the path relative to the user's mount point
+            let relative_path = format!("/{}/{}", user, filename_str);
+           
+            // Check if the path is accessible to the user
+            if !self.is_path_accessible(user, &relative_path).await {
+                return Err(nfsstat3::NFS3ERR_ACCES);
+            }
             
-            if let Ok(child_id) = self.get_id_from_path(&child_path).await {
+            if let Ok(child_id) = self.get_id_from_path(&relative_path).await {
                 //println!("ID--------{}", child_id);
                 return Ok(child_id);
             }
@@ -1083,6 +1110,11 @@ impl NFSFileSystem for MirrorFS {
         // Handle other directories
         let parent_path = self.get_path_from_id(dirid).await?;
         let child_path = format!("{}/{}", parent_path, filename_str);
+
+        // Check if the resolved path is within the user's mount point or in allowed shared areas
+        if !self.is_path_accessible(user, &child_path).await {
+            return Err(nfsstat3::NFS3ERR_ACCES);
+        }
     
         if let Ok(child_id) = self.get_id_from_path(&child_path).await {
             return Ok(child_id);
@@ -1092,15 +1124,18 @@ impl NFSFileSystem for MirrorFS {
         }
     }
     
-    async fn getattr(&self, id: fileid3) -> Result<fattr3, nfsstat3> {
-
-      
+    async fn getattr(&self, user: &str, id: fileid3) -> Result<fattr3, nfsstat3> {
 
         {         
        
         let metadata = self.get_metadata_from_id(id).await?;
        
         let path = self.get_path_from_id(id).await?;
+
+        // Check if the path is accessible to the user
+        if !self.is_path_accessible(user, &path).await {
+            return Err(nfsstat3::NFS3ERR_ACCES);
+        }
 
         debug!("Stat {:?}: {:?}", path, &metadata);
 
@@ -1163,7 +1198,7 @@ impl NFSFileSystem for MirrorFS {
 
             
 
-            // let _ = self.nfs_module.trigger_event(&creation_time, "reassembled", &path, &user);
+            let _ = self.nfs_module.trigger_event(&creation_time, "reassembled", &path, &user);
 
             
                 
@@ -1175,12 +1210,19 @@ impl NFSFileSystem for MirrorFS {
    
     }
 
-    async fn readdir(&self, dirid: fileid3, start_after: fileid3, max_entries: usize) -> Result<ReadDirResult, nfsstat3> {
+
+    async fn readdir(&self, user: &str, dirid: fileid3, start_after: fileid3, max_entries: usize) -> Result<ReadDirResult, nfsstat3> {
 
         
         {            
 
         let path = self.get_path_from_id(dirid).await?;
+
+        // Check if the directory is accessible to the user
+        if !self.is_path_accessible(user, &path).await {
+            return Err(nfsstat3::NFS3ERR_ACCES);
+        }
+
 
         let children_vec = self.get_direct_children(&path).await?;
         let children: BTreeSet<u64> = children_vec.into_iter().collect();
@@ -1362,6 +1404,8 @@ impl NFSFileSystem for MirrorFS {
             Err(_) => return Err(nfsstat3::NFS3ERR_IO),  // Replace with appropriate nfsstat3 error
         };
 
+        // println!("Within Write");
+
         let _is_complete = {
 
         let mut active_writes = self.active_writes.lock().await;
@@ -1411,7 +1455,7 @@ impl NFSFileSystem for MirrorFS {
                     user = parts[1];
                 }
 
-        // let _ = self.nfs_module.trigger_event(&creation_time, "disassembled", &path, &user);
+        let _ = self.nfs_module.trigger_event(&creation_time, "disassembled", &path, &user);
 
         let metadata = self.get_metadata_from_id(id).await?;
 
@@ -1519,7 +1563,12 @@ impl NFSFileSystem for MirrorFS {
                 if parent_path.is_empty() {
                     return Err(nfsstat3::NFS3ERR_NOENT); // No such directory id exists
                 }
-        
+              
+
+                if parent_path == "/" {
+                    return Err(nfsstat3::NFS3ERR_ACCES);
+                }
+
                 let objectname_osstr = OsStr::from_bytes(filename).to_os_string();
                 
                 let new_file_path: String;
@@ -1607,6 +1656,9 @@ impl NFSFileSystem for MirrorFS {
                 ).await
                     .map_err(|_| nfsstat3::NFS3ERR_IO)?;
             
+                if parent_path == "/" {
+                    return Err(nfsstat3::NFS3ERR_ACCES);
+                }
                 // if parent_path.is_empty() {
                 //     return Err(nfsstat3::NFS3ERR_NOENT); // No such directory id exists
                 // }
@@ -1702,6 +1754,10 @@ impl NFSFileSystem for MirrorFS {
                 new_dir_path = format!("/{}", objectname_osstr.to_str().unwrap_or(""));
             } else {
                 new_dir_path = format!("{}/{}", parent_path, objectname_osstr.to_str().unwrap_or(""));
+            }
+
+            if parent_path == "/" {
+                return Err(nfsstat3::NFS3ERR_ACCES);
             }
     
            let ftype_result = self.get_ftype(new_dir_path.clone()).await;
@@ -1879,7 +1935,11 @@ impl NFSFileSystem for MirrorFS {
                 if parent_path.is_empty() {
                     return Err(nfsstat3::NFS3ERR_NOENT); // No such directory id exists
                 }
+                
 
+                if parent_path == "/" {
+                    return Err(nfsstat3::NFS3ERR_ACCES);
+                }
     
                 let objectname_osstr = OsStr::from_bytes(dirname).to_os_string();
                 
@@ -1927,6 +1987,8 @@ impl NFSFileSystem for MirrorFS {
 
 //                (user_id, hash_tag, parent_path, new_dir_path, new_dir_id) // Return the values needed outside the scope
 //            };
+
+    
             
             let _ = self.create_node("0", new_dir_id, &new_dir_path).await;
 
@@ -1938,7 +2000,7 @@ impl NFSFileSystem for MirrorFS {
         
     }
 
-    async fn symlink(&self, dirid: fileid3, linkname: &filename3, symlink: &nfspath3, attr: &sattr3) -> Result<(fileid3, fattr3), nfsstat3> {
+    async fn symlink(&self, user: &str, dirid: fileid3, linkname: &filename3, symlink: &nfspath3, attr: &sattr3) -> Result<(fileid3, fattr3), nfsstat3> {
         // Validate input parameters
     if linkname.is_empty() || symlink.is_empty() {
         return Err(nfsstat3::NFS3ERR_INVAL);
@@ -1964,8 +2026,10 @@ impl NFSFileSystem for MirrorFS {
     ).await
         .map_err(|_| nfsstat3::NFS3ERR_IO)?;
 
+
     //Convert symlink to string
     let symlink_osstr = OsStr::from_bytes(symlink).to_os_string();
+
 
     // Construct the full symlink path
     let objectname_osstr = OsStr::from_bytes(linkname).to_os_string();
@@ -1977,6 +2041,8 @@ impl NFSFileSystem for MirrorFS {
         } else {
             symlink_path = format!("{}/{}", dir_path, objectname_osstr.to_str().unwrap_or(""));
         }
+
+        
 
         let symlink_exists: bool = match self.data_store.zscore(
             &format!("{}/{}_nodes", hash_tag, user_id),
@@ -2016,7 +2082,8 @@ impl NFSFileSystem for MirrorFS {
     
         let _ = self.data_store.hset_multiple(
             &format!("{}{}", hash_tag, &symlink_path),
-            &[
+            &[  
+                ("symlink_creator", user),
                 ("ftype", "2"),
                 ("size", &symlink.len().to_string()),
                 //("permissions", attr.mode as u64),
@@ -2170,16 +2237,15 @@ async fn main() {
     }
     
     let redis_data_store = Arc::new(RedisDataStore::new().expect("Failed to create a share store interface"));
-    // let nfs_module = match NFSModule::new().await {
-    //     Ok(module) => Arc::new(module),
-    //     Err(e) => {
-    //         eprintln!("Failed to create NFSModule: {}", e);
-    //         return;
-    //     }
-    // };
-    // let fs = MirrorFS::new(redis_data_store, nfs_module);
-    let fs = MirrorFS::new(redis_data_store);
-
+    let nfs_module = match NFSModule::new().await {
+        Ok(module) => Arc::new(module),
+        Err(e) => {
+            eprintln!("Failed to create NFSModule: {}", e);
+            return;
+        }
+    };
+    let fs = MirrorFS::new(redis_data_store, nfs_module);
+    
     let listener = NFSTcpListener::bind(&format!("0.0.0.0:{HOSTPORT}"), fs)
         .await
         .unwrap();

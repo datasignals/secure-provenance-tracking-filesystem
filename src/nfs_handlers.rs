@@ -115,6 +115,18 @@ pub async fn nfsproc3_getattr(
     handle.deserialize(input)?;
     debug!("nfsproc3_getattr({:?},{:?}) ", xid, handle);
 
+    //Get the user from operation Client_Address
+    let user = match get_user_from_addr(context).await {
+        Ok(user) => user,
+        Err(stat) => {
+            // Handle the error by returning the appropriate NFS response
+            make_success_reply(xid).serialize(output)?;
+            stat.serialize(output)?; // Serialize the error message or code
+            nfs::post_op_attr::Void.serialize(output)?; // Handle post-operation attributes
+            return Ok(());
+        }
+    };
+
     let id = context.vfs.fh_to_id(&handle);
     // fail if unable to convert file handle
     if let Err(stat) = id {
@@ -123,7 +135,7 @@ pub async fn nfsproc3_getattr(
         return Ok(());
     }
     let id = id.unwrap();
-    match context.vfs.getattr(id).await {
+    match context.vfs.getattr(&user, id).await {
         Ok(fh) => {
             debug!("nfsproc3_getattr ({:?} --> {:?})", xid, fh);
             make_success_reply(xid).serialize(output)?;
@@ -164,7 +176,7 @@ pub async fn nfsproc3_lookup(
     };
 
     // Continue processing with the valid user
-    // println!("User: {:?}", user);
+    //println!("User: {:?}", user);
 
     let dirid = context.vfs.fh_to_id(&dirops.dir);
     // fail if unable to convert file handle
@@ -175,13 +187,13 @@ pub async fn nfsproc3_lookup(
         return Ok(());
     }
     let dirid = dirid.unwrap();
-    let dir_attr = match context.vfs.getattr(dirid).await {
+    let dir_attr = match context.vfs.getattr(&user, dirid).await {
         Ok(v) => nfs::post_op_attr::attributes(v),
         Err(_) => nfs::post_op_attr::Void,
     };
-    match context.vfs.lookup(dirid, &dirops.name).await {
+    match context.vfs.lookup(&user, dirid, &dirops.name).await {
         Ok(fid) => {
-            let obj_attr = match context.vfs.getattr(fid).await {
+            let obj_attr = match context.vfs.getattr(&user, fid).await {
                 Ok(v) => nfs::post_op_attr::attributes(v),
                 Err(_) => nfs::post_op_attr::Void,
             };
@@ -231,6 +243,17 @@ pub async fn nfsproc3_read(
     args.deserialize(input)?;
     debug!("nfsproc3_read({:?},{:?}) ", xid, args);
 
+    let user = match get_user_from_addr(context).await {
+        Ok(user) => user,
+        Err(stat) => {
+            // Handle the error by returning the appropriate NFS response
+            make_success_reply(xid).serialize(output)?;
+            stat.serialize(output)?; // Serialize the error message or code
+            nfs::post_op_attr::Void.serialize(output)?; // Handle post-operation attributes
+            return Ok(());
+        }
+    };
+
     let id = context.vfs.fh_to_id(&args.file);
     if let Err(stat) = id {
         make_success_reply(xid).serialize(output)?;
@@ -240,7 +263,7 @@ pub async fn nfsproc3_read(
     }
     let id = id.unwrap();
 
-    let obj_attr = match context.vfs.getattr(id).await {
+    let obj_attr = match context.vfs.getattr(&user, id).await {
         Ok(v) => nfs::post_op_attr::attributes(v),
         Err(_) => nfs::post_op_attr::Void,
     };
@@ -313,6 +336,17 @@ pub async fn nfsproc3_fsinfo(
     handle.deserialize(input)?;
     debug!("nfsproc3_fsinfo({:?},{:?}) ", xid, handle);
 
+    let user = match get_user_from_addr(context).await {
+        Ok(user) => user,
+        Err(stat) => {
+            // Handle the error by returning the appropriate NFS response
+            make_success_reply(xid).serialize(output)?;
+            stat.serialize(output)?; // Serialize the error message or code
+            nfs::post_op_attr::Void.serialize(output)?; // Handle post-operation attributes
+            return Ok(());
+        }
+    };
+
     let id = context.vfs.fh_to_id(&handle);
     // fail if unable to convert file handle
     if let Err(stat) = id {
@@ -323,7 +357,7 @@ pub async fn nfsproc3_fsinfo(
     }
     let id = id.unwrap();
     //println!("nfsproc3_fsinfo-before");
-    let dir_attr = match context.vfs.getattr(id).await {
+    let dir_attr = match context.vfs.getattr(&user, id).await {
         Ok(v) => nfs::post_op_attr::attributes(v),
         Err(_) => nfs::post_op_attr::Void,
     };
@@ -371,6 +405,17 @@ pub async fn nfsproc3_access(
     access.deserialize(input)?;
     debug!("nfsproc3_access({:?},{:?},{:?})", xid, handle, access);
 
+    let user = match get_user_from_addr(context).await {
+        Ok(user) => user,
+        Err(stat) => {
+            // Handle the error by returning the appropriate NFS response
+            make_success_reply(xid).serialize(output)?;
+            stat.serialize(output)?; // Serialize the error message or code
+            nfs::post_op_attr::Void.serialize(output)?; // Handle post-operation attributes
+            return Ok(());
+        }
+    };
+
     let id = context.vfs.fh_to_id(&handle);
     // fail if unable to convert file handle
     if let Err(stat) = id {
@@ -381,7 +426,7 @@ pub async fn nfsproc3_access(
     }
     let id = id.unwrap();
 
-    let obj_attr = match context.vfs.getattr(id).await {
+    let obj_attr = match context.vfs.getattr(&user, id).await {
         Ok(v) => nfs::post_op_attr::attributes(v),
         Err(_) => nfs::post_op_attr::Void,
     };
@@ -429,6 +474,17 @@ pub async fn nfsproc3_pathconf(
     handle.deserialize(input)?;
     debug!("nfsproc3_pathconf({:?},{:?})", xid, handle);
 
+    let user = match get_user_from_addr(context).await {
+        Ok(user) => user,
+        Err(stat) => {
+            // Handle the error by returning the appropriate NFS response
+            make_success_reply(xid).serialize(output)?;
+            stat.serialize(output)?; // Serialize the error message or code
+            nfs::post_op_attr::Void.serialize(output)?; // Handle post-operation attributes
+            return Ok(());
+        }
+    };
+
     let id = context.vfs.fh_to_id(&handle);
     // fail if unable to convert file handle
     if let Err(stat) = id {
@@ -439,7 +495,7 @@ pub async fn nfsproc3_pathconf(
     }
     let id = id.unwrap();
 
-    let obj_attr = match context.vfs.getattr(id).await {
+    let obj_attr = match context.vfs.getattr(&user, id).await {
         Ok(v) => nfs::post_op_attr::attributes(v),
         Err(_) => nfs::post_op_attr::Void,
     };
@@ -493,6 +549,18 @@ pub async fn nfsproc3_fsstat(
     let mut handle = nfs::nfs_fh3::default();
     handle.deserialize(input)?;
     debug!("nfsproc3_fsstat({:?},{:?}) ", xid, handle);
+
+    let user = match get_user_from_addr(context).await {
+        Ok(user) => user,
+        Err(stat) => {
+            // Handle the error by returning the appropriate NFS response
+            make_success_reply(xid).serialize(output)?;
+            stat.serialize(output)?; // Serialize the error message or code
+            nfs::post_op_attr::Void.serialize(output)?; // Handle post-operation attributes
+            return Ok(());
+        }
+    };
+
     let id = context.vfs.fh_to_id(&handle);
     // fail if unable to convert file handle
     if let Err(stat) = id {
@@ -503,7 +571,7 @@ pub async fn nfsproc3_fsstat(
     }
     let id = id.unwrap();
 
-    let obj_attr = match context.vfs.getattr(id).await {
+    let obj_attr = match context.vfs.getattr(&user, id).await {
         Ok(v) => nfs::post_op_attr::attributes(v),
         Err(_) => nfs::post_op_attr::Void,
     };
@@ -570,6 +638,17 @@ pub async fn nfsproc3_readdirplus(
     args.deserialize(input)?;
     debug!("nfsproc3_readdirplus({:?},{:?}) ", xid, args);
 
+    let user = match get_user_from_addr(context).await {
+        Ok(user) => user,
+        Err(stat) => {
+            // Handle the error by returning the appropriate NFS response
+            make_success_reply(xid).serialize(output)?;
+            stat.serialize(output)?; // Serialize the error message or code
+            nfs::post_op_attr::Void.serialize(output)?; // Handle post-operation attributes
+            return Ok(());
+        }
+    };
+
     let dirid = context.vfs.fh_to_id(&args.dir);
     // fail if unable to convert file handle
     if let Err(stat) = dirid {
@@ -579,7 +658,7 @@ pub async fn nfsproc3_readdirplus(
         return Ok(());
     }
     let dirid = dirid.unwrap();
-    let dir_attr_maybe = context.vfs.getattr(dirid).await;
+    let dir_attr_maybe = context.vfs.getattr(&user, dirid).await;
 
     let dir_attr = match dir_attr_maybe {
         Ok(v) => nfs::post_op_attr::attributes(v),
@@ -605,7 +684,7 @@ pub async fn nfsproc3_readdirplus(
     let mut ctr = 0;
     match context
         .vfs
-        .readdir(dirid, args.cookie, estimated_max_results as usize)
+        .readdir(&user, dirid, args.cookie, estimated_max_results as usize)
         .await
     {
         Ok(result) => {
@@ -729,6 +808,18 @@ pub async fn nfsproc3_write(
     output: &mut impl Write,
     context: &RPCContext,
 ) -> Result<(), anyhow::Error> {
+
+    let user = match get_user_from_addr(context).await {
+        Ok(user) => user,
+        Err(stat) => {
+            // Handle the error by returning the appropriate NFS response
+            make_success_reply(xid).serialize(output)?;
+            stat.serialize(output)?; // Serialize the error message or code
+            nfs::post_op_attr::Void.serialize(output)?; // Handle post-operation attributes
+            return Ok(());
+        }
+    };
+
     // if we do not have write capabilities
     if !matches!(context.vfs.capabilities(), VFSCapabilities::ReadWrite) {
         warn!("No write capabilities.");
@@ -757,7 +848,7 @@ pub async fn nfsproc3_write(
     let id = id.unwrap();
 
     // get the object attributes before the write
-    let pre_obj_attr = match context.vfs.getattr(id).await {
+    let pre_obj_attr = match context.vfs.getattr(&user, id).await {
         Ok(v) => {
             let wccattr = nfs::wcc_attr {
                 size: v.size,
@@ -813,6 +904,18 @@ pub async fn nfsproc3_create(
     output: &mut impl Write,
     context: &RPCContext,
 ) -> Result<(), anyhow::Error> {
+
+    let user = match get_user_from_addr(context).await {
+        Ok(user) => user,
+        Err(stat) => {
+            // Handle the error by returning the appropriate NFS response
+            make_success_reply(xid).serialize(output)?;
+            stat.serialize(output)?; // Serialize the error message or code
+            nfs::post_op_attr::Void.serialize(output)?; // Handle post-operation attributes
+            return Ok(());
+        }
+    };
+
     // if we do not have write capabilities
     if !matches!(context.vfs.capabilities(), VFSCapabilities::ReadWrite) {
         warn!("No write capabilities.");
@@ -840,11 +943,12 @@ pub async fn nfsproc3_create(
         error!("Directory does not exist");
         return Ok(());
     }
+
     // found the directory, get the attributes
     let dirid = dirid.unwrap();
 
     // get the object attributes before the write
-    let pre_dir_attr = match context.vfs.getattr(dirid).await {
+    let pre_dir_attr = match context.vfs.getattr(&user, dirid).await {
         Ok(v) => {
             let wccattr = nfs::wcc_attr {
                 size: v.size,
@@ -871,11 +975,11 @@ pub async fn nfsproc3_create(
         createmode3::GUARDED => {
             target_attributes.deserialize(input)?;
             debug!("create guarded {:?}", target_attributes);
-            if context.vfs.lookup(dirid, &dirops.name).await.is_ok() {
+            if context.vfs.lookup(&user, dirid, &dirops.name).await.is_ok() {
                 // file exists. Fail with NFS3ERR_EXIST.
                 // Re-read dir attributes
                 // for post op attr
-                let post_dir_attr = match context.vfs.getattr(dirid).await {
+                let post_dir_attr = match context.vfs.getattr(&user, dirid).await {
                     Ok(v) => nfs::post_op_attr::attributes(v),
                     Err(_) => nfs::post_op_attr::Void,
                 };
@@ -918,7 +1022,7 @@ pub async fn nfsproc3_create(
     }
 
     // Re-read dir attributes for post op attr
-    let post_dir_attr = match context.vfs.getattr(dirid).await {
+    let post_dir_attr = match context.vfs.getattr(&user, dirid).await {
         Ok(v) => nfs::post_op_attr::attributes(v),
         Err(_) => nfs::post_op_attr::Void,
     };
@@ -977,6 +1081,18 @@ pub async fn nfsproc3_setattr(
     output: &mut impl Write,
     context: &RPCContext,
 ) -> Result<(), anyhow::Error> {
+
+    let user = match get_user_from_addr(context).await {
+        Ok(user) => user,
+        Err(stat) => {
+            // Handle the error by returning the appropriate NFS response
+            make_success_reply(xid).serialize(output)?;
+            stat.serialize(output)?; // Serialize the error message or code
+            nfs::post_op_attr::Void.serialize(output)?; // Handle post-operation attributes
+            return Ok(());
+        }
+    };
+
     if !matches!(context.vfs.capabilities(), VFSCapabilities::ReadWrite) {
         warn!("No write capabilities.");
         make_success_reply(xid).serialize(output)?;
@@ -999,7 +1115,7 @@ pub async fn nfsproc3_setattr(
 
     let ctime;
 
-    let pre_op_attr = match context.vfs.getattr(id).await {
+    let pre_op_attr = match context.vfs.getattr(&user, id).await {
         Ok(v) => {
             let wccattr = nfs::wcc_attr {
                 size: v.size,
@@ -1057,8 +1173,19 @@ pub async fn nfsproc3_remove(
     output: &mut impl Write,
     context: &RPCContext,
 ) -> Result<(), anyhow::Error> {
+
+    let user = match get_user_from_addr(context).await {
+        Ok(user) => user,
+        Err(stat) => {
+            // Handle the error by returning the appropriate NFS response
+            make_success_reply(xid).serialize(output)?;
+            stat.serialize(output)?; // Serialize the error message or code
+            nfs::post_op_attr::Void.serialize(output)?; // Handle post-operation attributes
+            return Ok(());
+        }
+    };
+
     // if we do not have write capabilities
-    
     if !matches!(context.vfs.capabilities(), VFSCapabilities::ReadWrite) {
         warn!("No write capabilities.");
         make_success_reply(xid).serialize(output)?;
@@ -1085,7 +1212,7 @@ pub async fn nfsproc3_remove(
     let dirid = dirid.unwrap();
 
     // get the object attributes before the write
-    let pre_dir_attr = match context.vfs.getattr(dirid).await {
+    let pre_dir_attr = match context.vfs.getattr(&user, dirid).await {
         Ok(v) => {
             let wccattr = nfs::wcc_attr {
                 size: v.size,
@@ -1107,7 +1234,7 @@ pub async fn nfsproc3_remove(
     let res = context.vfs.remove(dirid, &dirops.name).await;
 
     // Re-read dir attributes for post op attr
-    let post_dir_attr = match context.vfs.getattr(dirid).await {
+    let post_dir_attr = match context.vfs.getattr(&user, dirid).await {
         Ok(v) => nfs::post_op_attr::attributes(v),
         Err(_) => nfs::post_op_attr::Void,
     };
@@ -1143,6 +1270,18 @@ pub async fn nfsproc3_rename(
     output: &mut impl Write,
     context: &RPCContext,
 ) -> Result<(), anyhow::Error> {
+
+    let user = match get_user_from_addr(context).await {
+        Ok(user) => user,
+        Err(stat) => {
+            // Handle the error by returning the appropriate NFS response
+            make_success_reply(xid).serialize(output)?;
+            stat.serialize(output)?; // Serialize the error message or code
+            nfs::post_op_attr::Void.serialize(output)?; // Handle post-operation attributes
+            return Ok(());
+        }
+    };
+
     // if we do not have write capabilities
     if !matches!(context.vfs.capabilities(), VFSCapabilities::ReadWrite) {
         warn!("No write capabilities.");
@@ -1189,7 +1328,7 @@ pub async fn nfsproc3_rename(
     let to_dirid = to_dirid.unwrap();
 
     // get the object attributes before the write
-    let pre_from_dir_attr = match context.vfs.getattr(from_dirid).await {
+    let pre_from_dir_attr = match context.vfs.getattr(&user, from_dirid).await {
         Ok(v) => {
             let wccattr = nfs::wcc_attr {
                 size: v.size,
@@ -1208,7 +1347,7 @@ pub async fn nfsproc3_rename(
     };
 
     // get the object attributes before the write
-    let pre_to_dir_attr = match context.vfs.getattr(to_dirid).await {
+    let pre_to_dir_attr = match context.vfs.getattr(&user, to_dirid).await {
         Ok(v) => {
             let wccattr = nfs::wcc_attr {
                 size: v.size,
@@ -1233,11 +1372,11 @@ pub async fn nfsproc3_rename(
         .await;
 
     // Re-read dir attributes for post op attr
-    let post_from_dir_attr = match context.vfs.getattr(from_dirid).await {
+    let post_from_dir_attr = match context.vfs.getattr(&user, from_dirid).await {
         Ok(v) => nfs::post_op_attr::attributes(v),
         Err(_) => nfs::post_op_attr::Void,
     };
-    let post_to_dir_attr = match context.vfs.getattr(to_dirid).await {
+    let post_to_dir_attr = match context.vfs.getattr(&user, to_dirid).await {
         Ok(v) => nfs::post_op_attr::attributes(v),
         Err(_) => nfs::post_op_attr::Void,
     };
@@ -1287,6 +1426,18 @@ pub async fn nfsproc3_mkdir(
     output: &mut impl Write,
     context: &RPCContext,
 ) -> Result<(), anyhow::Error> {
+
+    let user = match get_user_from_addr(context).await {
+        Ok(user) => user,
+        Err(stat) => {
+            // Handle the error by returning the appropriate NFS response
+            make_success_reply(xid).serialize(output)?;
+            stat.serialize(output)?; // Serialize the error message or code
+            nfs::post_op_attr::Void.serialize(output)?; // Handle post-operation attributes
+            return Ok(());
+        }
+    };
+
     // if we do not have write capabilities
     if !matches!(context.vfs.capabilities(), VFSCapabilities::ReadWrite) {
         warn!("No write capabilities.");
@@ -1316,7 +1467,7 @@ pub async fn nfsproc3_mkdir(
     let dirid = dirid.unwrap();
 
     // get the object attributes before the write
-    let pre_dir_attr = match context.vfs.getattr(dirid).await {
+    let pre_dir_attr = match context.vfs.getattr(&user, dirid).await {
         Ok(v) => {
             let wccattr = nfs::wcc_attr {
                 size: v.size,
@@ -1333,11 +1484,11 @@ pub async fn nfsproc3_mkdir(
             return Ok(());
         }
     };
-
+   
     let res = context.vfs.mkdir(dirid, &args.dirops.name).await;
 
     // Re-read dir attributes for post op attr
-    let post_dir_attr = match context.vfs.getattr(dirid).await {
+    let post_dir_attr = match context.vfs.getattr(&user, dirid).await {
         Ok(v) => nfs::post_op_attr::attributes(v),
         Err(_) => nfs::post_op_attr::Void,
     };
@@ -1405,6 +1556,18 @@ pub async fn nfsproc3_symlink(
     output: &mut impl Write,
     context: &RPCContext,
 ) -> Result<(), anyhow::Error> {
+
+    let user = match get_user_from_addr(context).await {
+        Ok(user) => user,
+        Err(stat) => {
+            // Handle the error by returning the appropriate NFS response
+            make_success_reply(xid).serialize(output)?;
+            stat.serialize(output)?; // Serialize the error message or code
+            nfs::post_op_attr::Void.serialize(output)?; // Handle post-operation attributes
+            return Ok(());
+        }
+    };
+
     // if we do not have write capabilities
     if !matches!(context.vfs.capabilities(), VFSCapabilities::ReadWrite) {
         warn!("No write capabilities.");
@@ -1433,7 +1596,7 @@ pub async fn nfsproc3_symlink(
     let dirid = dirid.unwrap();
 
     // get the object attributes before the write
-    let pre_dir_attr = match context.vfs.getattr(dirid).await {
+    let pre_dir_attr = match context.vfs.getattr(&user, dirid).await {
         Ok(v) => {
             let wccattr = nfs::wcc_attr {
                 size: v.size,
@@ -1454,6 +1617,7 @@ pub async fn nfsproc3_symlink(
     let res = context
         .vfs
         .symlink(
+            &user,
             dirid,
             &args.dirops.name,
             &args.symlink.symlink_data,
@@ -1462,7 +1626,7 @@ pub async fn nfsproc3_symlink(
         .await;
 
     // Re-read dir attributes for post op attr
-    let post_dir_attr = match context.vfs.getattr(dirid).await {
+    let post_dir_attr = match context.vfs.getattr(&user, dirid).await {
         Ok(v) => nfs::post_op_attr::attributes(v),
         Err(_) => nfs::post_op_attr::Void,
     };
@@ -1505,6 +1669,17 @@ pub async fn nfsproc3_readlink(
     handle.deserialize(input)?;
     debug!("nfsproc3_readlink({:?},{:?}) ", xid, handle);
 
+    let user = match get_user_from_addr(context).await {
+        Ok(user) => user,
+        Err(stat) => {
+            // Handle the error by returning the appropriate NFS response
+            make_success_reply(xid).serialize(output)?;
+            stat.serialize(output)?; // Serialize the error message or code
+            nfs::post_op_attr::Void.serialize(output)?; // Handle post-operation attributes
+            return Ok(());
+        }
+    };
+
     let id = context.vfs.fh_to_id(&handle);
     // fail if unable to convert file handle
     if let Err(stat) = id {
@@ -1514,7 +1689,7 @@ pub async fn nfsproc3_readlink(
     }
     let id = id.unwrap();
     // if the id does not exist, we fail
-    let symlink_attr = match context.vfs.getattr(id).await {
+    let symlink_attr = match context.vfs.getattr(&user, id).await {
         Ok(v) => nfs::post_op_attr::attributes(v),
         Err(stat) => {
             make_success_reply(xid).serialize(output)?;
