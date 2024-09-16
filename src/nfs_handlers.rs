@@ -267,7 +267,7 @@ pub async fn nfsproc3_read(
         Ok(v) => nfs::post_op_attr::attributes(v),
         Err(_) => nfs::post_op_attr::Void,
     };
-    match context.vfs.read(id, args.offset, args.count).await {
+    match context.vfs.read(&user, id, args.offset, args.count).await {
         Ok((bytes, eof)) => {
             let res = READ3resok {
                 file_attributes: obj_attr,

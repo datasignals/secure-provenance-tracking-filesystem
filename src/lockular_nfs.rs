@@ -1,5 +1,6 @@
 use std::collections::{BTreeSet, HashMap};
 use std::ffi::OsStr;
+use std::process::id;
 use std::sync::{Arc, RwLock};
 // use tokio::sync::RwLock as OtherRwLock;
 use tokio::sync::{Mutex, Semaphore};
@@ -133,21 +134,22 @@ impl FileMetadata {
 #[derive(Clone)]
 pub struct MirrorFS {
     data_store: Arc<dyn DataStore>,
-    nfs_module: Arc<NFSModule>, // Add NFSModule wrapped in Arc
+    // nfs_module: Arc<NFSModule>, // Add NFSModule wrapped in Arc
     active_writes: Arc<Mutex<HashMap<fileid3, ActiveWrite>>>,
     commit_semaphore: Arc<Semaphore>,
     
 }
 
 impl MirrorFS {
-    pub fn new(data_store: Arc<dyn DataStore>, nfs_module: Arc<NFSModule>) -> MirrorFS {
+    // pub fn new(data_store: Arc<dyn DataStore>, nfs_module: Arc<NFSModule>) -> MirrorFS {
+    pub fn new(data_store: Arc<dyn DataStore>) -> MirrorFS {
         // Create shared components for active writes
         let active_writes = Arc::new(Mutex::new(HashMap::new()));
         let commit_semaphore = Arc::new(Semaphore::new(10)); // Adjust based on your system's capabilities
 
         let mirror_fs = MirrorFS {
             data_store,
-            nfs_module,
+            // nfs_module,
             active_writes: active_writes.clone(),
             commit_semaphore: commit_semaphore.clone(),
         };
@@ -1051,24 +1053,174 @@ impl MirrorFS {
         Ok(())
     }
 
-    async fn is_path_accessible(&self, user: &str, path: &str) -> bool {
+    
+    // async fn is_path_accessible(&self, user: &str, path: &str) -> bool {
+    //     let user_mount = format!("/{}", user);
         
-        let mount_user = format!("/{}", user);
+    //     let path_parts: Vec<&str> = path.split('/').collect();
+
+    //     // The root directory is always accessible
+    //     if path == "/" {
+    //         return true;
+    //     }
+        
+    //     // Check if the path is within the user's mount point
+    //     if path.starts_with(&user_mount) {
+    //         // User can access everything in their own directory
+    //         return true;
+    //     }
+
+    //     if path_parts.len() == 2 {
+
+    //          return true;
+
+    //     }
+
+    //     if path_parts.len() == 3 {
+
+    //         return true;
+
+    //    }
+
+    //     if path_parts.len() == 4 {
+
+    //         // Check access to other users' shared directories
+    //         let path_parts: Vec<&str> = path.split('/').collect();
+    //         if path_parts.len() == 4 && path_parts[2] == "shared" {
+    //             let owner = path_parts[1];
+    //             if owner != user {
+    //                 // For other users' shared directories, we'll allow access
+    //                 // but rely on readdir to filter the contents
+    //                 return true;
+    //             }
+    //         }
+
+            
+    //    }
+        
+        
+    //     // Deny access to all other paths
+    //     false
+    // }
+    
+    async fn is_path_accessible(&self, user: &str, path: &str) -> bool {
+        let user_mount = format!("/{}", user);
+        let path_parts: Vec<&str> = path.split('/').collect();
+        let (user_id, hash_tag) = MirrorFS::get_user_id_and_hash_tag().await;
+        println!("Accessible Path---------: {}", &path);
 
         // The root directory is always accessible
         if path == "/" {
             return true;
         }
-    
+        
         // Check if the path is within the user's mount point
-        if path.starts_with(&mount_user) {
+        if path.starts_with(&user_mount) {
+
+        // Check if the path is a symlink to a shared folder
+        if path_parts.len() > 3 && path_parts[2] == "shared" {
+            if self.is_symbolic_link(&path).await.unwrap_or(false) {
+                        println!("Path-3: {}", &path);
+                        return true;
+                    
+            }
+        }
+            // User can access everything in their own directory
             return true;
         }
+   
+        if !path.starts_with(&user_mount) && path_parts.len() < 3 {
+       
+            return true;
+        }
+        
+        if !path.starts_with(&user_mount) && path_parts.len() >= 3 {
+
+            // Check access to other users' shared directories
+            if path_parts[2] == "shared" {
+                println!("Path-2: {}", &path);
+                    // For other users' shared directories, we'll allow access
+                    // but rely on readdir to filter the contents
+
+                    return true;
+                
+            }
+            
+        }
     
-        // Add any other allowed paths here
-    
+     
+        
+        
+        // Deny access to all other paths
         false
     }
+
+    async fn read_link(&self, path: &str) -> Result<std::path::PathBuf, nfsstat3> {
+
+        let (user_id, hash_tag) = MirrorFS::get_user_id_and_hash_tag().await;
+        
+        // Retrieve the symlink target using the path
+        let symlink_target: String = match self.data_store.hget(
+            &format!("{}{}", hash_tag, path),
+            "symlink_target"
+        ).await {
+            Ok(target) => target,
+            Err(_) => return Err(nfsstat3::NFS3ERR_IO),
+        };
+    
+        if symlink_target.is_empty() {
+            Err(nfsstat3::NFS3ERR_INVAL) // Path exists but isn't a symlink (or missing target)
+        } else {
+            Ok(std::path::PathBuf::from(symlink_target))
+        }
+    }
+
+    async fn is_symbolic_link(&self, path: &str) -> Result<bool, nfsstat3> {
+        let (user_id, hash_tag) = MirrorFS::get_user_id_and_hash_tag().await;
+    
+        // Check if the file at the given path has the "symlink_target" metadata
+        match self.data_store.hget(&format!("{}{}", hash_tag, path), "symlink_target").await {
+            Ok(target) => {
+                if !target.is_empty() {
+                    println!("Found symbolic link target for path: {}", path);
+                    Ok(true)
+                } else {
+                    println!("No symbolic link target found for path: {}", path);
+                    Ok(false)
+                }
+            }
+            Err(err) => {
+                println!("Error checking symbolic link for path {}: {:?}", path, err);
+                Ok(false)
+            }
+        }
+    }
+    
+    async fn is_symlink_created_by_user(&self, path: &str, user: &str) -> bool {
+        let (_user_id, hash_tag) = MirrorFS::get_user_id_and_hash_tag().await;
+    
+        // Check if the symbolic link was created by mount_user
+        match self.data_store.hget(&format!("{}{}", hash_tag, path), "symlink_creator").await {
+            Ok(creator_user) => {
+                if creator_user == user {
+                    println!("Symbolic link at path {} was created by user: {}", path, user);
+                    return true;
+                }
+                println!("Symbolic link at path {} was created by another user: {}", path, creator_user);
+                false
+            }
+            Err(_) => {
+                println!("No symlink_creator metadata found for path: {}", path);
+                false
+            }
+        }
+    }
+
+
+    
+    
+    
+
 
 }
 
@@ -1147,10 +1299,10 @@ impl NFSFileSystem for MirrorFS {
         
     }
 
-    async fn read(&self, id: fileid3, offset: u64, count: u32) -> Result<(Vec<u8>, bool), nfsstat3> {
+    async fn read(&self, user: &str, id: fileid3, offset: u64, count: u32) -> Result<(Vec<u8>, bool), nfsstat3> {
 
         
-        {
+        {   
             //let mut conn = self.pool.get_connection();             
 
             let (user_id, hash_tag) = MirrorFS::get_user_id_and_hash_tag().await;
@@ -1163,9 +1315,35 @@ impl NFSFileSystem for MirrorFS {
             ).await.map_err(|_| nfsstat3::NFS3ERR_IO)?;
                 //.unwrap_or_default();
 
+            println!("Read_Path-2:----------- {}", &path);
+
+             // Check if the resolved path is within the user's mount point or in allowed shared areas
+            if !self.is_path_accessible(user, &path).await {
+                return Err(nfsstat3::NFS3ERR_ACCES);
+            }
+
+            let path_parts: Vec<&str> = path.split('/').collect();
+            let in_own_user_shared = path_parts.len() > 3 && 
+                                   path_parts[1] == user && 
+                                   path_parts[2] == "shared";
+
+            let target_path = if in_own_user_shared && self.is_symbolic_link(&path).await.unwrap_or(false) {
+                // If it's a symlink, resolve the target path
+                self.read_link(&path).await.map_err(|_| nfsstat3::NFS3ERR_IO)?
+            } else {
+                std::path::PathBuf::from(&path)
+            };
+            
+            println!("Target_Path:------ {:?}", target_path);
+            // Convert PathBuf to String
+            let target_path_str = target_path.to_str().ok_or(nfsstat3::NFS3ERR_IO)?;
+
+
             // Retrieve the current file content (Base64 encoded)
             // Retrieve the existing data from the share store
-            let current_data= self.get_data(&path).await;
+            let current_data = self.get_data(target_path_str).await;
+            // let current_data= self.get_data(&path).await;
+
             // Check if the offset is beyond the current data length
             if offset as usize >= current_data.len() {
                 return Ok((vec![], true)); // Return an empty vector and EOF as true
@@ -1198,7 +1376,7 @@ impl NFSFileSystem for MirrorFS {
 
             
 
-            let _ = self.nfs_module.trigger_event(&creation_time, "reassembled", &path, &user);
+            // let _ = self.nfs_module.trigger_event(&creation_time, "reassembled", &path, &user);
 
             
                 
@@ -1210,71 +1388,152 @@ impl NFSFileSystem for MirrorFS {
    
     }
 
-
     async fn readdir(&self, user: &str, dirid: fileid3, start_after: fileid3, max_entries: usize) -> Result<ReadDirResult, nfsstat3> {
-
         
-        {            
-
         let path = self.get_path_from_id(dirid).await?;
+        // println!("Readdir called for path: {}", path);
 
         // Check if the directory is accessible to the user
         if !self.is_path_accessible(user, &path).await {
+            // println!("Access denied for user {} to path {}", user, path);
             return Err(nfsstat3::NFS3ERR_ACCES);
         }
-
-
         let children_vec = self.get_direct_children(&path).await?;
         let children: BTreeSet<u64> = children_vec.into_iter().collect();
-        
-        //println!("Children: {:?}", children.iter().collect::<Vec<_>>());
         
         let mut ret = ReadDirResult {
             entries: Vec::new(),
             end: false,
         };
-
+        
         let range_start = if start_after > 0 {
             Bound::Excluded(start_after)
         } else {
             Bound::Unbounded
         };
-
+        
         let remaining_length = children.range((range_start, Bound::Unbounded)).count();
-        debug!("path: {:?}", path);
-        debug!("children len: {:?}", children.len());
-        debug!("remaining_len : {:?}", remaining_length);
+        // println!("Path: {:?}, Children count: {}, Remaining length: {}", path, children.len(), remaining_length);
+
+        let path_parts: Vec<&str> = path.split('/').collect();
+        let in_other_user_shared = path_parts.len() >= 3 && 
+                                   path_parts[1] != user && 
+                                   path_parts[2] == "shared";
+        // println!("Path parts: {:?}", path_parts);
+        // println!("In other user's shared directory: {}", in_other_user_shared);
+
+        let mut processed_entries = 0;
         for child_id in children.range((range_start, Bound::Unbounded)) {
-            //println!("Child_Id-------{}", *child_id);
+            processed_entries += 1;
+            // println!("Processing entry {}/{}", processed_entries, remaining_length);
             let child_path = self.get_path_from_id(*child_id).await?;
-            let child_name = self.get_last_path_element(child_path).await;
-            let child_metadata = self.get_metadata_from_id(*child_id).await?;
-
-            debug!("\t --- {:?} {:?}", child_id, child_name);
+            let child_name = self.get_last_path_element(child_path.clone()).await;
+            // println!("Child path: {}, Child name: {}", child_path, child_name);
+            let include_entry = if in_other_user_shared {
+                let is_symlink = self.is_symbolic_link(&child_path).await.unwrap_or(false);
+                let is_created_by_user = self.is_symlink_created_by_user(&child_path, user).await;
+                // println!("Symlink check: {}, Created by user check: {}", is_symlink, is_created_by_user);
+                is_symlink && is_created_by_user
+            } else {
+                true
+            };
             
-            ret.entries.push(DirEntry {
-                fileid: *child_id,
-                name: child_name.as_bytes().into(),
-                attr: FileMetadata::metadata_to_fattr3(*child_id, &child_metadata).await.expect(""),
-            });
+            // println!("Include Entry: {}", include_entry);
             
-
-            if ret.entries.len() >= max_entries {
+            if include_entry {
+                // println!("Including entry: {}", child_name);
+                let child_metadata = self.get_metadata_from_id(*child_id).await?;
+                ret.entries.push(DirEntry {
+                    fileid: *child_id,
+                    name: child_name.as_bytes().into(),
+                    attr: FileMetadata::metadata_to_fattr3(*child_id, &child_metadata).await.map_err(|_| nfsstat3::NFS3ERR_IO)?,
+                });
+                
+                if ret.entries.len() >= max_entries {
+                    // println!("Reached max entries ({}), breaking loop", max_entries);
+                    break;
+                }
+            } else {
+                // println!("Skipping entry: {}", child_name);
+            }
+            
+            if processed_entries >= remaining_length {
+                // println!("Processed all entries, breaking loop");
                 break;
             }
         }
-
-        if ret.entries.len() == remaining_length {
-            ret.end = true;
-        }
-
-        debug!("readdir_result:{:?}", ret);
+        
+        ret.end = processed_entries >= remaining_length;
+        
+        // println!("Readdir result: {} entries, end: {}", ret.entries.len(), ret.end);
 
         Ok(ret)
-
-        }
-       
     }
+
+    // async fn readdir(&self, user: &str, dirid: fileid3, start_after: fileid3, max_entries: usize) -> Result<ReadDirResult, nfsstat3> {
+
+        
+    //     {            
+
+    //     let path = self.get_path_from_id(dirid).await?;
+
+    //     // Check if the directory is accessible to the user
+    //     if !self.is_path_accessible(user, &path).await {
+    //         return Err(nfsstat3::NFS3ERR_ACCES);
+    //     }
+
+
+    //     let children_vec = self.get_direct_children(&path).await?;
+    //     let children: BTreeSet<u64> = children_vec.into_iter().collect();
+        
+    //     //println!("Children: {:?}", children.iter().collect::<Vec<_>>());
+        
+    //     let mut ret = ReadDirResult {
+    //         entries: Vec::new(),
+    //         end: false,
+    //     };
+
+    //     let range_start = if start_after > 0 {
+    //         Bound::Excluded(start_after)
+    //     } else {
+    //         Bound::Unbounded
+    //     };
+
+    //     let remaining_length = children.range((range_start, Bound::Unbounded)).count();
+    //     debug!("path: {:?}", path);
+    //     debug!("children len: {:?}", children.len());
+    //     debug!("remaining_len : {:?}", remaining_length);
+    //     for child_id in children.range((range_start, Bound::Unbounded)) {
+    //         //println!("Child_Id-------{}", *child_id);
+    //         let child_path = self.get_path_from_id(*child_id).await?;
+    //         let child_name = self.get_last_path_element(child_path).await;
+    //         let child_metadata = self.get_metadata_from_id(*child_id).await?;
+
+    //         debug!("\t --- {:?} {:?}", child_id, child_name);
+            
+    //         ret.entries.push(DirEntry {
+    //             fileid: *child_id,
+    //             name: child_name.as_bytes().into(),
+    //             attr: FileMetadata::metadata_to_fattr3(*child_id, &child_metadata).await.expect(""),
+    //         });
+            
+
+    //         if ret.entries.len() >= max_entries {
+    //             break;
+    //         }
+    //     }
+
+    //     if ret.entries.len() == remaining_length {
+    //         ret.end = true;
+    //     }
+
+    //     debug!("readdir_result:{:?}", ret);
+
+    //     Ok(ret)
+
+    //     }
+       
+    // }
 
     async fn setattr(&self, id: fileid3, setattr: sattr3) -> Result<fattr3, nfsstat3> {
 
@@ -1455,7 +1714,7 @@ impl NFSFileSystem for MirrorFS {
                     user = parts[1];
                 }
 
-        let _ = self.nfs_module.trigger_event(&creation_time, "disassembled", &path, &user);
+        // let _ = self.nfs_module.trigger_event(&creation_time, "disassembled", &path, &user);
 
         let metadata = self.get_metadata_from_id(id).await?;
 
@@ -2042,7 +2301,6 @@ impl NFSFileSystem for MirrorFS {
             symlink_path = format!("{}/{}", dir_path, objectname_osstr.to_str().unwrap_or(""));
         }
 
-        
 
         let symlink_exists: bool = match self.data_store.zscore(
             &format!("{}/{}_nodes", hash_tag, user_id),
@@ -2150,6 +2408,8 @@ impl NFSFileSystem for MirrorFS {
                 return Err(nfsstat3::NFS3ERR_STALE);
             }
         };
+
+        println!("ReadLink Path: {}", &path);
     
         // Retrieve the symlink target using the path
         let symlink_target: String = match self.data_store.hget(
@@ -2237,15 +2497,16 @@ async fn main() {
     }
     
     let redis_data_store = Arc::new(RedisDataStore::new().expect("Failed to create a share store interface"));
-    let nfs_module = match NFSModule::new().await {
-        Ok(module) => Arc::new(module),
-        Err(e) => {
-            eprintln!("Failed to create NFSModule: {}", e);
-            return;
-        }
-    };
-    let fs = MirrorFS::new(redis_data_store, nfs_module);
-    
+    // let nfs_module = match NFSModule::new().await {
+    //     Ok(module) => Arc::new(module),
+    //     Err(e) => {
+    //         eprintln!("Failed to create NFSModule: {}", e);
+    //         return;
+    //     }
+    // };
+    // let fs = MirrorFS::new(redis_data_store, nfs_module);
+    let fs = MirrorFS::new(redis_data_store);
+
     let listener = NFSTcpListener::bind(&format!("0.0.0.0:{HOSTPORT}"), fs)
         .await
         .unwrap();
